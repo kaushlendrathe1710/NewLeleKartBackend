@@ -1,5 +1,6 @@
 import fetch from 'node-fetch';
 import dotenv from 'dotenv';
+import WooCommerce from '../config/woocommerce.js';
 
 dotenv.config();
 
@@ -54,7 +55,14 @@ export const me = async (req, res) => {
     }
 
     const userData = await response.json();
-    res.json(userData);
+
+    // Fetch customer data from WooCommerce
+    const customerId = userData.id; // Assuming the WordPress user ID is the same as the WooCommerce customer ID
+    const wooCommerceResponse = await WooCommerce.get(`customers/${customerId}`);
+
+    const customerData = wooCommerceResponse.data;
+
+    res.json({ ...userData, customerData });
   } catch (error) {
     console.error('Error fetching user data:', error);
     res.status(500).json({ message: 'Failed to fetch user data' });
@@ -109,8 +117,23 @@ export const register = async (req, res) => {
 
     // Respond with the new user's token
     res.status(201).json(newUserData);
+
+    // Create customer in WooCommerce
+    try {
+      const wooCommerceResponse = await WooCommerce.post('customers', {
+        email: email,
+        username: username
+      });
+      console.log('WooCommerce customer created successfully', wooCommerceResponse.data);
+      const wooCommerceCustomerId = wooCommerceResponse.data.id;
+      console.log('WooCommerce Customer ID:', wooCommerceCustomerId);
+    } catch (error) {
+      console.error('Error creating WooCommerce customer:', error.response ? error.response.data : error.message);
+      // Consider how to handle this error - maybe log it or notify an admin
+    }
+
   } catch (error) {
     console.error('Registration error:', error);
     res.status(500).json({ message: 'Registration failed' });
   }
-};
+}
