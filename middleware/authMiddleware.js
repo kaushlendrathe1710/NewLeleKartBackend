@@ -1,6 +1,4 @@
-import jwt from 'jsonwebtoken';
-
-const verifyJWT = (req, res, next) => {
+const verifyJWT = async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {
@@ -9,14 +7,24 @@ const verifyJWT = (req, res, next) => {
 
   const token = authHeader.split(' ')[1];
 
-  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-    if (err) {
-      return res.status(401).send({ message: 'Failed to authenticate token' });
-    }
+  try {
+    const response = await fetch(`${process.env.WP_BASE_URL}/wp-json/jwt-auth/v1/token/validate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
 
-    req.userId = decoded.id;
-    next();
-  });
+    if (response.ok) {
+      next();
+    } else {
+      return res.status(401).send({ message: 'Invalid token' });
+    }
+  } catch (error) {
+    console.error('Token validation error:', error);
+    return res.status(500).send({ message: 'Failed to validate token' });
+  }
 };
 
 export default verifyJWT;
