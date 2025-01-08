@@ -1,9 +1,8 @@
 import WooCommerce from '../config/woocommerce.js';
 
-export const getProducts = (req, res) => {
+export const getCategories = (req, res) => {
   const queryParams = req.query;
-
-  WooCommerce.get('products', queryParams)
+  WooCommerce.get('products/categories', queryParams)
     .then((response) => {
       res.send(response.data);
     })
@@ -12,9 +11,9 @@ export const getProducts = (req, res) => {
     });
 };
 
-export const getProductById = (req, res) => {
+export const getCategoryById = (req, res) => {
   const { id } = req.params;
-  WooCommerce.get(`products/${id}`)
+  WooCommerce.get(`products/categories/${id}`)
     .then((response) => {
       res.send(response.data);
     })
