@@ -2,10 +2,16 @@ import WooCommerce from '../config/woocommerce.js';
 
 export const getProducts = (req, res) => {
   const queryParams = req.query;
+  const pageNumber = parseInt(queryParams.page) || 1;
+  const perPage = parseInt(queryParams.per_page) || 10;
 
   WooCommerce.get('products', queryParams)
     .then((response) => {
-      res.send(response.data);
+      res.send({
+        products: response.data,
+        totalProductCount: perPage,
+        pageNumber: pageNumber
+      });
     })
     .catch((error) => {
       res.status(error.response.status).send(error.response.data);
