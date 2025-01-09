@@ -4,7 +4,7 @@ export const getProducts = (req, res) => {
   const queryParams = req.query;
   const pageNumber = parseInt(queryParams.page) || 1;
 
-  WooCommerce.get('products')
+  WooCommerce.get('products', queryParams)
     .then((totalResponse) => {
       const totalProducts = parseInt(totalResponse.headers['x-wp-total'], 10);
 
