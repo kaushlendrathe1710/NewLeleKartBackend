@@ -3,15 +3,22 @@ import WooCommerce from '../config/woocommerce.js';
 export const getProducts = (req, res) => {
   const queryParams = req.query;
   const pageNumber = parseInt(queryParams.page) || 1;
-  const perPage = parseInt(queryParams.per_page) || 10;
 
-  WooCommerce.get('products', queryParams)
-    .then((response) => {
-      res.send({
-        products: response.data,
-        totalProductCount: perPage,
-        pageNumber: pageNumber
-      });
+  WooCommerce.get('products')
+    .then((totalResponse) => {
+      const totalProducts = parseInt(totalResponse.headers['x-wp-total'], 10);
+
+      WooCommerce.get('products', queryParams)
+        .then((response) => {
+          res.send({
+            products: response.data,
+            pageNumber: pageNumber,
+            totalProducts: totalProducts,
+          });
+        })
+        .catch((error) => {
+          res.status(error.response.status).send(error.response.data);
+        });
     })
     .catch((error) => {
       res.status(error.response.status).send(error.response.data);
