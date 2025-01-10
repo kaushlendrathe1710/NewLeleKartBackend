@@ -26,14 +26,6 @@ export const getProducts = (req, res) => {
     });
 };
 
-export const getFlashDeals = async (req, res) => {
-  try {
-    const response = await WooCommerce.get('products', { on_sale: true });
-    res.send(response.data);
-  } catch (error) {
-    res.status(error.response?.status || 500).send(error.response?.data || error.message);
-  }
-};
 
 export const getWhatsNew = async (req, res) => {
   try {
@@ -54,6 +46,23 @@ export const getClearance = async (req, res) => {
     } else {
       res.status(404).send({ message: 'Clearance tag not found' });
     }
+  } catch (error) {
+    res.status(error.response?.status || 500).send(error.response?.data || error.message);
+  }
+};
+
+export const getExploreProducts = async (req, res) => {
+  try {
+    const response = await WooCommerce.get('products', req.query);
+    // Function to shuffle array (Fisher-Yates shuffle)
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+    }
+    shuffleArray(response.data);
+    res.send(response.data);
   } catch (error) {
     res.status(error.response?.status || 500).send(error.response?.data || error.message);
   }
