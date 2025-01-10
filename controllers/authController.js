@@ -83,7 +83,7 @@ export const register = async (req, res) => {
 
     if (!adminResponse.ok) {
       const errorData = await adminResponse.json();
-      return res.status(401).json({ message: `Failed to create user ${errorData} `,  });
+      return res.status(401).json({ message: `Failed to create user ${errorData.message} `,  });
     }
     const adminData = await adminResponse.json();
     const adminToken = adminData.token;
@@ -100,7 +100,7 @@ export const register = async (req, res) => {
 
     if (!userResponse.ok) {
       const errorData = await userResponse.json();
-      return res.status(userResponse.status).json({ message: `Failed to create user ${errorData} `,  });
+      return res.status(userResponse.status).json({ message: `Failed to create user ${errorData.message} `,  });
     }
 
     // Respond with success message, indicating email verification is needed
