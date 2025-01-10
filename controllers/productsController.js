@@ -59,6 +59,15 @@ export const getClearance = async (req, res) => {
   }
 };
 
+export const getHotDeals = async (req, res) => {
+  try {
+    const response = await WooCommerce.get('products', { on_sale: true });
+    res.send(response.data);
+  } catch (error) {
+    res.status(error.response?.status || 500).send(error.response?.data || error.message);
+  }
+};
+
 export const getAllTags = async (req, res) => {
   try {
     const response = await WooCommerce.get('products/tags');
