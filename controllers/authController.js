@@ -27,6 +27,9 @@ export const login = async (req, res) => {
     });
 
     const data = await response.json();
+    if (data.code === '[jwt_auth] uv_authentication_failed') {
+      return res.status(403).json({ message: 'Please verify your Email' });
+    }
     res.json(data);
   } catch (error) {
     console.error('Login error:', error);
