@@ -1,18 +1,22 @@
 import WooCommerce from '../config/woocommerce.js';
 
-export const getCategories = (req, res) => {
+export const getCategories = async (req, res) => {
   const queryParams = { ...req.query, parent: 0 };
   const pageNumber = parseInt(queryParams.page || 1);
-  WooCommerce.get('products/categories', queryParams)
-    .then((response) => {
-      res.send({
-        data: response.data,
-        pageNumber,
-      });
-    })
-    .catch((error) => {
-      res.status(error.response.status).send(error.response.data);
+
+  try {
+    const categoriesResponse = await WooCommerce.get('products/categories', queryParams);
+    const totalCategoriesResponse = await WooCommerce.get('products/categories', { ...queryParams, per_page: 1 });
+    const totalCategoryCount = parseInt(totalCategoriesResponse.headers['x-wp-total'], 10);
+
+    res.send({
+      data: categoriesResponse.data,
+      pageNumber,
+      totalCategoryCount,
     });
+  } catch (error) {
+    res.status(error.response.status).send(error.response.data);
+  }
 };
 
 export const getCategoryById = (req, res) => {
