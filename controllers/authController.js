@@ -59,8 +59,7 @@ export const me = async (req, res) => {
 
     const userData = await response.json();
 
-    // Fetch customer data from WooCommerce
-    const customerId = userData.id; // Assuming the WordPress user ID is the same as the WooCommerce customer ID
+    const customerId = userData.id;
     const wooCommerceResponse = await WooCommerce.get(`customers/${customerId}`);
 
     const customerData = wooCommerceResponse.data;
@@ -76,7 +75,6 @@ export const register = async (req, res) => {
   const { username, password, email } = req.body;
 
   try {
-    // 1. Obtain an admin token
     const adminResponse = await fetch(JWT_LOGIN_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -85,7 +83,7 @@ export const register = async (req, res) => {
 
     if (!adminResponse.ok) {
       const errorData = await adminResponse.json();
-      return res.status(401).json({ message: 'Failed to get admin token', error: errorData });
+      return res.status(401).json({ message: `Failed to create user ${errorData} `,  });
     }
     const adminData = await adminResponse.json();
     const adminToken = adminData.token;
@@ -102,7 +100,7 @@ export const register = async (req, res) => {
 
     if (!userResponse.ok) {
       const errorData = await userResponse.json();
-      return res.status(userResponse.status).json({ message: 'Failed to create user', error: errorData });
+      return res.status(userResponse.status).json({ message: `Failed to create user ${errorData} `,  });
     }
 
     // Respond with success message, indicating email verification is needed
@@ -126,7 +124,7 @@ export const register = async (req, res) => {
       }
     } catch (error) {
       console.error('Error creating WooCommerce customer:', error.response ? error.response.data : error.message);
-      // Consider how to handle this error - maybe log it or notify an admin
+      
     }
 
   } catch (error) {
