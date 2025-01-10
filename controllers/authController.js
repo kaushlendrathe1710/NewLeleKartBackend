@@ -34,35 +34,6 @@ export const login = async (req, res) => {
   }
 };
 
-export const forgotPassword = async (req, res) => {
-  const { email } = req.body;
-  const FORGOT_PASSWORD_ENDPOINT = `${WP_BASE_URL}/wp-json/wp/v2/users/lostpassword`;
-
-  try {
-    const response = await fetch(FORGOT_PASSWORD_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        email,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('Forgot password error:', errorData);
-      return res.status(response.status).json({ message: 'Failed to send password reset email', error: errorData });
-    }
-
-    const data = await response.json();
-    res.json({ message: 'Password reset email sent successfully', data });
-  } catch (error) {
-    console.error('Forgot password error:', error);
-    res.status(500).json({ message: 'Failed to send password reset email' });
-  }
-};
-
 export const me = async (req, res) => {
   const token = req.headers.authorization?.split(' ')[1];
 
