@@ -102,31 +102,25 @@ export const register = async (req, res) => {
       return res.status(userResponse.status).json({ message: 'Failed to create user', error: errorData });
     }
 
-    // 3. Obtain a token for the newly created user
-    const newUserResponse = await fetch(JWT_LOGIN_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
-    });
+    // Respond with success message, indicating email verification is needed
+    res.status(201).json({ message: 'Your account has been created. Please verify your email.' });
 
-    if (!newUserResponse.ok) {
-      const errorData = await newUserResponse.json();
-      return res.status(401).json({ message: 'Failed to get new user token', error: errorData });
-    }
-    const newUserData = await newUserResponse.json();
-
-    // Respond with the new user's token
-    res.status(201).json(newUserData);
-
-    // Create customer in WooCommerce
+    // Check if customer already exists in WooCommerce
     try {
-      const wooCommerceResponse = await WooCommerce.post('customers', {
-        email: email,
-        username: username
-      });
-      console.log('WooCommerce customer created successfully', wooCommerceResponse.data);
-      const wooCommerceCustomerId = wooCommerceResponse.data.id;
-      console.log('WooCommerce Customer ID:', wooCommerceCustomerId);
+      const existingCustomers = await WooCommerce.get('customers', { email: email });
+      if (existingCustomers.data.length > 0) {
+        console.log('WooCommerce customer already exists');
+      } else {
+        // Create customer in WooCommerce
+        const wooCommerceResponse = await WooCommerce.post('customers', {
+          email: email,
+          username: username,
+          password: password
+        });
+        console.log('WooCommerce customer created successfully', wooCommerceResponse.data);
+        const wooCommerceCustomerId = wooCommerceResponse.data.id;
+        console.log('WooCommerce Customer ID:', wooCommerceCustomerId);
+      }
     } catch (error) {
       console.error('Error creating WooCommerce customer:', error.response ? error.response.data : error.message);
       // Consider how to handle this error - maybe log it or notify an admin
