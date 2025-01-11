@@ -1,0 +1,14 @@
+{
+  "phases": {
+    "setup": {
+      "nodejs": "18",
+      "bun": true
+    },
+    "install": {
+      "cmd": "bun install"
+    },
+    "start": {
+      "cmd": "bun run start"
+    }
+  }
+}
