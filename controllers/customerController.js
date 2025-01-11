@@ -15,6 +15,42 @@ export const updateBillingAddress = async (req, res) => {
   }
 };
 
+export const createCustomerOrder = async (req, res) => {
+  try {
+    const { line_items, payment_method } = req.body;
+    const customerId = req.user.id; // Assuming user ID is available in req.user after JWT verification
+
+    // Fetch customer data to get billing and shipping addresses
+    const customer = await WooCommerce.get(`customers/${customerId}`);
+
+    const orderData = {
+      customer_id: customerId,
+      billing: customer.data.billing,
+      shipping: customer.data.shipping,
+      line_items: line_items,
+      payment_method: payment_method,
+      set_paid: false, // Or true if you want to mark the order as paid
+    };
+
+    const response = await WooCommerce.post('orders', orderData);
+    res.status(201).json(response.data);
+  } catch (error) {
+    console.error('Error creating order:', error);
+    res.status(500).json({ message: 'Failed to create order' });
+  }
+};
+
+export const getOrders = async (req, res) => {
+  try {
+    const customerId = req.user.id;
+    const response = await WooCommerce.get('orders', { customer: customerId });
+    res.json(response.data);
+  } catch (error) {
+    console.error('Error fetching orders:', error);
+    res.status(500).json({ message: 'Failed to fetch orders' });
+  }
+};
+
 export const updateShippingAddress = async (req, res) => {
   const { customerId } = req.params;
   const { shipping } = req.body;
@@ -181,4 +217,22 @@ export const addItemToCart = async (req, res) => {
   }
 
   res.status(200).json(results);
+};
+
+export const getPaymentMethods = async (req, res) => {
+  try {
+    const response = await WooCommerce.get('payment_gateways');
+    const paymentMethods = response.data
+      .filter(gateway => gateway.enabled)
+      .map(gateway => ({
+        id: gateway.id,
+        name: gateway.name,
+        description: gateway.description,
+        enabled: gateway.enabled
+      }));
+    res.json(paymentMethods);
+  } catch (error) {
+    console.error('Error fetching payment methods:', error);
+    res.status(500).json({ message: 'Failed to fetch payment methods' });
+  }
 };
