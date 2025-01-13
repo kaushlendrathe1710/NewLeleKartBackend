@@ -52,6 +52,7 @@ export const getOrders = async (req, res) => {
 };
 
 export const updateShippingAddress = async (req, res) => {
+  console.log('hit this')
   const { customerId } = req.params;
   const { shipping } = req.body;
 

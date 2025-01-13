@@ -13,7 +13,7 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
 export const login = async (req, res) => {
   const { username, password } = req.body;
-
+console.log(username,password)
   try {
     const response = await fetch(JWT_LOGIN_ENDPOINT, {
       method: 'POST',
