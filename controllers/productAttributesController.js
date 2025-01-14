@@ -6,15 +6,17 @@ const CACHE_EXPIRATION_TIME = 300; // 300 seconds
 export const getAttributes = async (req, res) => {
     const cacheKey = 'products/attributes';
     if (attributesCache[cacheKey] && Date.now() - attributesCache[cacheKey].timestamp < CACHE_EXPIRATION_TIME * 1000) {
-        return res.json(attributesCache[cacheKey].data);
+        return res.json(attributesCache[cacheKey]);
     }
     try {
         const response = await WooCommerce.get(cacheKey);
+        const totalAttributes = parseInt(response.headers['x-wp-total'], 10);
         attributesCache[cacheKey] = {
             data: response.data,
+            totalAttributes: totalAttributes,
             timestamp: Date.now(),
         };
-        res.json(response.data);
+        res.json(attributesCache[cacheKey]);
     } catch (error) {
         console.error("Error fetching product attributes:", error);
         res.status(500).json({ error: 'Failed to fetch product attributes' });

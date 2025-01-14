@@ -16,29 +16,22 @@ export const getProducts = (req, res) => {
   const cacheKey = 'products-' + JSON.stringify(queryParams);
 
   if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
-    return res.send(productsCache[cacheKey].data);
+    return res.send(productsCache[cacheKey]);
   }
 
   const pageNumber = parseInt(queryParams.page) || 1;
 
   WooCommerce.get('products', queryParams)
-    .then((totalResponse) => {
-      const totalProducts = parseInt(totalResponse.headers['x-wp-total'], 10);
-
-      WooCommerce.get('products', queryParams)
-        .then((response) => {
-          const responseData = {
-            data: response.data,
-            pageNumber: pageNumber,
-            totalProducts: totalProducts,
-            timestamp: Date.now(),
-          };
-          productsCache[cacheKey] = responseData;
-          res.send(responseData.data);
-        })
-        .catch((error) => {
-          res.status(error.response.status).send(error.response.data);
-        });
+    .then((response) => {
+      const totalProducts = parseInt(response.headers['x-wp-total'], 10);
+      const responseData = {
+        data: response.data,
+        pageNumber: pageNumber,
+        totalProducts: totalProducts,
+        timestamp: Date.now(),
+      };
+      productsCache[cacheKey] = responseData;
+      res.send(responseData);
     })
     .catch((error) => {
       res.status(error.response.status).send(error.response.data);

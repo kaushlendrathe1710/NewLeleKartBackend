@@ -8,16 +8,18 @@ export const getProductVariations = (req, res) => {
   const cacheKey = `products/${productId}/variations`;
 
   if (variationsCache[cacheKey] && Date.now() - variationsCache[cacheKey].timestamp < CACHE_EXPIRATION_TIME * 1000) {
-    return res.send(variationsCache[cacheKey].data);
+    return res.send(variationsCache[cacheKey]);
   }
 
   WooCommerce.get(cacheKey)
     .then((response) => {
+      const totalVariations = parseInt(response.headers['x-wp-total'], 10);
       variationsCache[cacheKey] = {
         data: response.data,
+        totalVariations: totalVariations,
         timestamp: Date.now(),
       };
-      res.send(response.data);
+      res.send(variationsCache);
     })
     .catch((error) => {
       res.status(error.response.status).send(error.response.data);

@@ -4,20 +4,18 @@ const categoriesCache = {};
 const CACHE_EXPIRATION_TIME = 300; // 300 seconds
 
 export const getCategories = async (req, res) => {
-    const cacheKey = 'products/categories';
+    const cacheKey = 'parent-product-categories';
     if (categoriesCache[cacheKey] && Date.now() - categoriesCache[cacheKey].timestamp < CACHE_EXPIRATION_TIME * 1000) {
         return res.json(categoriesCache[cacheKey].data);
     }
     try {
-        const response = await WooCommerce.get(cacheKey);
-        categoriesCache[cacheKey] = {
-            data: response.data,
-            timestamp: Date.now(),
-        };
-        res.json(response.data);
+        const response = await WooCommerce.get('products/categories', { per_page: 100 });
+        const parentCategories = response.data.filter(category => category.parent === 0);
+        categoriesCache[cacheKey] = { data: parentCategories, timestamp: Date.now() };
+        res.json(parentCategories);
     } catch (error) {
-        console.error("Error fetching product categories:", error);
-        res.status(500).json({ error: 'Failed to fetch product categories' });
+        console.error("Error fetching parent product categories:", error);
+        res.status(500).json({ error: 'Failed to fetch parent product categories' });
     }
 };
 
@@ -51,15 +49,17 @@ export const getSubcategories = async (req, res) => {
     const { parentId } = req.params;
     const cacheKey = `products/categories?parent=${parentId}`;
     if (categoriesCache[cacheKey] && Date.now() - categoriesCache[cacheKey].timestamp < CACHE_EXPIRATION_TIME * 1000) {
-        return res.json(categoriesCache[cacheKey].data);
+        return res.json(categoriesCache[cacheKey]);
     }
     try {
         const response = await WooCommerce.get(cacheKey);
+        const totalSubcategories = parseInt(response.headers['x-wp-total'], 10);
         categoriesCache[cacheKey] = {
             data: response.data,
+            totalSubcategories: totalSubcategories,
             timestamp: Date.now(),
         };
-        res.json(response.data);
+        res.json(categoriesCache[cacheKey]);
     } catch (error) {
         console.error("Error fetching subcategories for parent ID:", parentId, error);
         res.status(500).json({ error: 'Failed to fetch subcategories' });
