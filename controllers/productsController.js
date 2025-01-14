@@ -1,8 +1,24 @@
 import WooCommerce from '../config/woocommerce.js';
 
 
+const productsCache = {};
+const CACHE_EXPIRATION_TIME = 300; // seconds
+
+function isCacheExpired(cacheEntry) {
+  if (!cacheEntry || !cacheEntry.timestamp) {
+    return true;
+  }
+  return (Date.now() - cacheEntry.timestamp) / 1000 > CACHE_EXPIRATION_TIME;
+}
+
 export const getProducts = (req, res) => {
   const queryParams = req.query;
+  const cacheKey = 'products-' + JSON.stringify(queryParams);
+
+  if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
+    return res.send(productsCache[cacheKey].data);
+  }
+
   const pageNumber = parseInt(queryParams.page) || 1;
 
   WooCommerce.get('products', queryParams)
@@ -11,11 +27,14 @@ export const getProducts = (req, res) => {
 
       WooCommerce.get('products', queryParams)
         .then((response) => {
-          res.send({
-            products: response.data,
+          const responseData = {
+            data: response.data,
             pageNumber: pageNumber,
             totalProducts: totalProducts,
-          });
+            timestamp: Date.now(),
+          };
+          productsCache[cacheKey] = responseData;
+          res.send(responseData.data);
         })
         .catch((error) => {
           res.status(error.response.status).send(error.response.data);
@@ -28,8 +47,13 @@ export const getProducts = (req, res) => {
 
 
 export const getWhatsNew = async (req, res) => {
+  const cacheKey = 'whatsNew';
+  if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
+    return res.send(productsCache[cacheKey].data);
+  }
   try {
     const response = await WooCommerce.get('products', { orderby: 'date', order: 'desc' });
+    productsCache[cacheKey] = { data: response.data, timestamp: Date.now() };
     res.send(response.data);
   } catch (error) {
     res.status(error.response?.status || 500).send(error.response?.data || error.message);
@@ -37,11 +61,16 @@ export const getWhatsNew = async (req, res) => {
 };
 
 export const getClearance = async (req, res) => {
+  const cacheKey = 'clearance';
+  if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
+    return res.send(productsCache[cacheKey].data);
+  }
   try {
     const tagsResponse = await WooCommerce.get('products/tags', { slug: 'clearance' });
     if (tagsResponse.data.length > 0) {
       const tagId = tagsResponse.data[0].id;
       const response = await WooCommerce.get('products', { tag: tagId });
+      productsCache[cacheKey] = { data: response.data, timestamp: Date.now() };
       res.send(response.data);
     } else {
       res.status(404).send({ message: 'Clearance tag not found' });
@@ -52,6 +81,10 @@ export const getClearance = async (req, res) => {
 };
 
 export const getExploreProducts = async (req, res) => {
+  const cacheKey = 'exploreProducts-' + JSON.stringify(req.query);
+  if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
+    return res.send(productsCache[cacheKey].data);
+  }
   try {
     const response = await WooCommerce.get('products', req.query);
     // Function to shuffle array (Fisher-Yates shuffle)
@@ -62,6 +95,7 @@ export const getExploreProducts = async (req, res) => {
       }
     }
     shuffleArray(response.data);
+    productsCache[cacheKey] = { data: response.data, timestamp: Date.now() };
     res.send(response.data);
   } catch (error) {
     res.status(error.response?.status || 500).send(error.response?.data || error.message);
@@ -69,8 +103,13 @@ export const getExploreProducts = async (req, res) => {
 };
 
 export const getHotDeals = async (req, res) => {
+  const cacheKey = 'hotDeals';
+  if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
+    return res.send(productsCache[cacheKey].data);
+  }
   try {
     const response = await WooCommerce.get('products', { on_sale: true });
+    productsCache[cacheKey] = { data: response.data, timestamp: Date.now() };
     res.send(response.data);
   } catch (error) {
     res.status(error.response?.status || 500).send(error.response?.data || error.message);
@@ -78,8 +117,13 @@ export const getHotDeals = async (req, res) => {
 };
 
 export const getAllTags = async (req, res) => {
+  const cacheKey = 'allTags';
+  if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
+    return res.send(productsCache[cacheKey].data);
+  }
   try {
     const response = await WooCommerce.get('products/tags');
+    productsCache[cacheKey] = { data: response.data, timestamp: Date.now() };
     res.send(response.data);
   } catch (error) {
     res.status(error.response?.status || 500).send(error.response?.data || error.message);
@@ -88,6 +132,10 @@ export const getAllTags = async (req, res) => {
 
 export const getProductById = async (req, res) => {
   const { id } = req.params;
+  const cacheKey = `product-${id}`;
+  if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
+    return res.send(productsCache[cacheKey].data);
+  }
 
   try {
     const productResponse = await WooCommerce.get(`products/${id}`);
@@ -101,10 +149,17 @@ export const getProductById = async (req, res) => {
       variations = variationsResponse.data;
     }
 
-    res.send({ product, variations });
+    const responseData = { product, variations, timestamp: Date.now() };
+    productsCache[cacheKey] = responseData;
+    res.send(responseData);
   } catch (error) {
     res
       .status(error.response?.status || 500)
       .send(error.response?.data || error.message);
   }
+};
+
+export const clearProductCache = (req, res) => {
+  Object.keys(productsCache).forEach(key => delete productsCache[key]);
+  res.send({ message: 'Product cache cleared successfully' });
 };
