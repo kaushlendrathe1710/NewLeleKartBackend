@@ -134,7 +134,7 @@ export const getProductById = async (req, res) => {
   const { id } = req.params;
   const cacheKey = `product-${id}`;
   if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
-    return res.send(productsCache[cacheKey].data);
+    return res.send(productsCache[cacheKey]);
   }
 
   try {
