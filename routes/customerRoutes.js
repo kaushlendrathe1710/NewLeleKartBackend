@@ -1,5 +1,5 @@
 import express from 'express';
-import { updateBillingAddress, updateShippingAddress, getCart, addItemToCart, removeProductFromCart, updateCartItem, getPaymentMethods, createCustomerOrder, getOrders } from '../controllers/customerController.js';
+import { updateBillingAddress, updateShippingAddress, getCart, addItemToCart, removeProductFromCart, updateCartItem, getPaymentMethods, createCustomerOrder, getOrders, cancelOrder } from '../controllers/customerController.js';
 import verifyJWT from '../middleware/authMiddleware.js';
 
 const router = express.Router();
