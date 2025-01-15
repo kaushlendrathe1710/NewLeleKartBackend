@@ -29,7 +29,7 @@ export const createCustomerOrder = async (req, res) => {
       shipping: customer.data.shipping,
       line_items: line_items,
       payment_method: payment_method,
-      set_paid: false, // Or true if you want to mark the order as paid
+      set_paid: payment_method === 'cod',
     };
 
     const response = await WooCommerce.post('orders', orderData);
