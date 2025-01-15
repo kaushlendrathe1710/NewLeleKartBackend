@@ -2,20 +2,12 @@ import WooCommerce from '../config/woocommerce.js';
 
 
 const productsCache = {};
-const CACHE_EXPIRATION_TIME = 300; // seconds
-
-function isCacheExpired(cacheEntry) {
-  if (!cacheEntry || !cacheEntry.timestamp) {
-    return true;
-  }
-  return (Date.now() - cacheEntry.timestamp) / 1000 > CACHE_EXPIRATION_TIME;
-}
 
 export const getProducts = (req, res) => {
   const queryParams = req.query;
   const cacheKey = 'products-' + JSON.stringify(queryParams);
 
-  if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
+  if (productsCache[cacheKey]) {
     return res.send(productsCache[cacheKey]);
   }
 
@@ -41,7 +33,7 @@ export const getProducts = (req, res) => {
 
 export const getWhatsNew = async (req, res) => {
   const cacheKey = 'whatsNew';
-  if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
+  if (productsCache[cacheKey]) {
     return res.send(productsCache[cacheKey].data);
   }
   try {
@@ -55,7 +47,7 @@ export const getWhatsNew = async (req, res) => {
 
 export const getClearance = async (req, res) => {
   const cacheKey = 'clearance';
-  if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
+  if (productsCache[cacheKey]) {
     return res.send(productsCache[cacheKey].data);
   }
   try {
@@ -75,7 +67,7 @@ export const getClearance = async (req, res) => {
 
 export const getExploreProducts = async (req, res) => {
   const cacheKey = 'exploreProducts-' + JSON.stringify(req.query);
-  if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
+  if (productsCache[cacheKey]) {
     return res.send(productsCache[cacheKey].data);
   }
   try {
@@ -97,7 +89,7 @@ export const getExploreProducts = async (req, res) => {
 
 export const getHotDeals = async (req, res) => {
   const cacheKey = 'hotDeals';
-  if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
+  if (productsCache[cacheKey]) {
     return res.send(productsCache[cacheKey].data);
   }
   try {
@@ -111,7 +103,7 @@ export const getHotDeals = async (req, res) => {
 
 export const getAllTags = async (req, res) => {
   const cacheKey = 'allTags';
-  if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
+  if (productsCache[cacheKey]) {
     return res.send(productsCache[cacheKey].data);
   }
   try {
@@ -126,7 +118,7 @@ export const getAllTags = async (req, res) => {
 export const getProductById = async (req, res) => {
   const { id } = req.params;
   const cacheKey = `product-${id}`;
-  if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
+  if (productsCache[cacheKey]) {
     return res.send(productsCache[cacheKey]);
   }
 

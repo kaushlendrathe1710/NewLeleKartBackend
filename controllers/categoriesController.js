@@ -5,9 +5,6 @@ const CACHE_EXPIRATION_TIME = 300; // 300 seconds
 
 export const getCategories = async (req, res) => {
     const cacheKey = 'parent-product-categories';
-    if (categoriesCache[cacheKey] && Date.now() - categoriesCache[cacheKey].timestamp < CACHE_EXPIRATION_TIME * 1000) {
-        return res.json(categoriesCache[cacheKey].data);
-    }
     try {
         const response = await WooCommerce.get('products/categories', { per_page: 100 });
         const parentCategories = response.data.filter(category => category.parent === 0);
@@ -22,9 +19,6 @@ export const getCategories = async (req, res) => {
 export const getCategoryById = async (req, res) => {
     const { id } = req.params;
     const cacheKey = `products/categories/${id}`;
-    if (categoriesCache[cacheKey] && Date.now() - categoriesCache[cacheKey].timestamp < CACHE_EXPIRATION_TIME * 1000) {
-        return res.json(categoriesCache[cacheKey].data);
-    }
     try {
         const response = await WooCommerce.get(cacheKey);
         if (response.status === 200) {
@@ -48,9 +42,6 @@ export const getCategoryById = async (req, res) => {
 export const getSubcategories = async (req, res) => {
     const { parentId } = req.params;
     const cacheKey = `products/categories?parent=${parentId}`;
-    if (categoriesCache[cacheKey] && Date.now() - categoriesCache[cacheKey].timestamp < CACHE_EXPIRATION_TIME * 1000) {
-        return res.json(categoriesCache[cacheKey]);
-    }
     try {
         const response = await WooCommerce.get(cacheKey);
         const totalSubcategories = parseInt(response.headers['x-wp-total'], 10);
