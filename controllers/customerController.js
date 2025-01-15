@@ -56,6 +56,24 @@ export const getOrders = async (req, res) => {
   }
 };
 
+export const cancelOrder = async (req, res) => {
+  const { orderId } = req.params;
+  const userId = req.user.id;
+  try {
+    const order = await WooCommerce.get(`orders/${orderId}`);
+    if (order.data.customer_id !== userId) {
+      return res.status(403).json({ message: 'Unauthorized to cancel this order' });
+    }
+    const response = await WooCommerce.put(`orders/${orderId}`, {
+      status: 'cancelled',
+    });
+    res.json(response.data);
+  } catch (error) {
+    console.error('Error cancelling order:', error);
+    res.status(500).json({ message: 'Failed to cancel order' });
+  }
+};
+
 export const updateShippingAddress = async (req, res) => {
   console.log('hit this')
   const { customerId } = req.params;
