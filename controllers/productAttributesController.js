@@ -55,5 +55,4 @@ export const clearProductAttributesCache = (req, res) => {
             delete attributesCache[key];
         }
     });
-    res.send({ message: 'Product attributes cache cleared' });
 };

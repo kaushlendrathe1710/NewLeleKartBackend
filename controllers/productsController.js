@@ -154,5 +154,4 @@ export const getProductById = async (req, res) => {
 
 export const clearProductCache = (req, res) => {
   Object.keys(productsCache).forEach(key => delete productsCache[key]);
-  res.send({ message: 'Product cache cleared successfully' });
 };

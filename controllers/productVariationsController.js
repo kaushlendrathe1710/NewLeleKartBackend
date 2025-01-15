@@ -53,5 +53,4 @@ export const clearProductVariationsCache = (req, res) => {
       delete variationsCache[key];
     }
   });
-  res.send({ message: 'Product variations cache cleared' });
 };

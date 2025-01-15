@@ -72,5 +72,4 @@ export const clearCategoriesCache = (req, res) => {
             delete categoriesCache[key];
         }
     });
-    res.send({ message: 'Categories cache cleared' });
 };
