@@ -61,9 +61,6 @@ export const cancelOrder = async (req, res) => {
   const userId = req.user.id;
   try {
     const order = await WooCommerce.get(`orders/${orderId}`);
-    if (order.data.customer_id !== userId) {
-      return res.status(403).json({ message: 'Unauthorized to cancel this order' });
-    }
     const response = await WooCommerce.put(`orders/${orderId}`, {
       status: 'cancelled',
     });
