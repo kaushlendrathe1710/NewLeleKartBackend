@@ -46,8 +46,15 @@ export const getWhatsNew = async (req, res) => {
   }
   try {
     const response = await WooCommerce.get('products', { orderby: 'date', order: 'desc' });
-    productsCache[cacheKey] = { data: response.data, timestamp: Date.now() };
-    res.send(response.data);
+    const totalProducts = parseInt(response.headers['x-wp-total'], 10);
+    const responseData = {
+      data: response.data,
+      pageNumber: 1,
+      totalProducts: totalProducts,
+      timestamp: Date.now(),
+    };
+    productsCache[cacheKey] = responseData;
+    res.send(responseData);
   } catch (error) {
     res.status(error.response?.status || 500).send(error.response?.data || error.message);
   }
@@ -63,8 +70,15 @@ export const getClearance = async (req, res) => {
     if (tagsResponse.data.length > 0) {
       const tagId = tagsResponse.data[0].id;
       const response = await WooCommerce.get('products', { tag: tagId });
-      productsCache[cacheKey] = { data: response.data, timestamp: Date.now() };
-      res.send(response.data);
+      const totalProducts = parseInt(response.headers['x-wp-total'], 10);
+      const responseData = {
+        data: response.data,
+        pageNumber: 1,
+        totalProducts: totalProducts,
+        timestamp: Date.now(),
+      };
+      productsCache[cacheKey] = responseData;
+      res.send(responseData);
     } else {
       res.status(404).send({ message: 'Clearance tag not found' });
     }
@@ -88,8 +102,15 @@ export const getExploreProducts = async (req, res) => {
       }
     }
     shuffleArray(response.data);
-    productsCache[cacheKey] = { data: response.data, timestamp: Date.now() };
-    res.send(response.data);
+    const totalProducts = parseInt(response.headers['x-wp-total'], 10);
+    const responseData = {
+      data: response.data,
+      pageNumber: 1,
+      totalProducts: totalProducts,
+      timestamp: Date.now(),
+    };
+    productsCache[cacheKey] = responseData;
+    res.send(responseData);
   } catch (error) {
     res.status(error.response?.status || 500).send(error.response?.data || error.message);
   }
@@ -102,8 +123,15 @@ export const getHotDeals = async (req, res) => {
   }
   try {
     const response = await WooCommerce.get('products', { on_sale: true });
-    productsCache[cacheKey] = { data: response.data, timestamp: Date.now() };
-    res.send(response.data);
+    const totalProducts = parseInt(response.headers['x-wp-total'], 10);
+    const responseData = {
+      data: response.data,
+      pageNumber: 1,
+      totalProducts: totalProducts,
+      timestamp: Date.now(),
+    };
+    productsCache[cacheKey] = responseData;
+    res.send(responseData);
   } catch (error) {
     res.status(error.response?.status || 500).send(error.response?.data || error.message);
   }

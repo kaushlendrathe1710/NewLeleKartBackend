@@ -20,8 +20,17 @@ model User {
   name  String?
 }
 
+enum BannerType {
+  sale
+  daily
+  new
+}
+
 model Banner {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  bannerType  BannerType
+  productId   String?
+  categoryId  String?
   title       String
   content     String
   desktopUrl  String?
