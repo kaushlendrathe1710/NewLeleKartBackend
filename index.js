@@ -7,6 +7,8 @@ import authRoutes from './routes/authRoutes.js';
 import WooCommerce from './config/woocommerce.js';
 import customerRoutes from './routes/customerRoutes.js';
 import clearCacheRoutes from './routes/clearCacheRoutes.js';
+import bannerRoutes from './routes/bannerRoutes.js';
+import paymentRoutes from './routes/paymentRoutes.js';
 
 const app = express();
 const PORT = 3000;
@@ -23,7 +25,9 @@ app.use('/attributes', productAttributesRoutes);
 app.use('/categories', categoriesRoutes);
 app.use('/auth', authRoutes);
 app.use('/customers', customerRoutes);
+app.use('/payment', paymentRoutes);
 app.use('/cache', clearCacheRoutes);
+app.use('/banners', bannerRoutes);
 
 // Start the server
 app.listen(PORT, () => {
