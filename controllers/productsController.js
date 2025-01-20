@@ -42,7 +42,7 @@ export const getProducts = (req, res) => {
 export const getWhatsNew = async (req, res) => {
   const cacheKey = 'whatsNew';
   if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
-    return res.send(productsCache[cacheKey].data);
+    return res.send(productsCache[cacheKey]);
   }
   try {
     const response = await WooCommerce.get('products', { orderby: 'date', order: 'desc' });
@@ -63,7 +63,7 @@ export const getWhatsNew = async (req, res) => {
 export const getClearance = async (req, res) => {
   const cacheKey = 'clearance';
   if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
-    return res.send(productsCache[cacheKey].data);
+    return res.send(productsCache[cacheKey]);
   }
   try {
     const tagsResponse = await WooCommerce.get('products/tags', { slug: 'clearance' });
@@ -90,7 +90,7 @@ export const getClearance = async (req, res) => {
 export const getExploreProducts = async (req, res) => {
   const cacheKey = 'exploreProducts-' + JSON.stringify(req.query);
   if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
-    return res.send(productsCache[cacheKey].data);
+    return res.send(productsCache[cacheKey]);
   }
   try {
     const response = await WooCommerce.get('products', req.query);
@@ -119,7 +119,7 @@ export const getExploreProducts = async (req, res) => {
 export const getHotDeals = async (req, res) => {
   const cacheKey = 'hotDeals';
   if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
-    return res.send(productsCache[cacheKey].data);
+    return res.send(productsCache[cacheKey]);
   }
   try {
     const response = await WooCommerce.get('products', { on_sale: true });
@@ -140,7 +140,7 @@ export const getHotDeals = async (req, res) => {
 export const getAllTags = async (req, res) => {
   const cacheKey = 'allTags';
   if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
-    return res.send(productsCache[cacheKey].data);
+    return res.send(productsCache[cacheKey]);
   }
   try {
     const response = await WooCommerce.get('products/tags');
