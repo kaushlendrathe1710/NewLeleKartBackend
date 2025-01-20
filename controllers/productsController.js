@@ -54,7 +54,7 @@ export const getWhatsNew = async (req, res) => {
     const totalProducts = parseInt(response.headers['x-wp-total'], 10);
     const responseData = {
       data: response.data,
-      pageNumber: 1,
+      pageNumber: parseInt(req.query.page) || 1,
       totalProducts: totalProducts,
       timestamp: Date.now(),
     };
@@ -82,7 +82,7 @@ export const getClearance = async (req, res) => {
       const totalProducts = parseInt(response.headers['x-wp-total'], 10);
       const responseData = {
         data: response.data,
-        pageNumber: 1,
+        pageNumber: parseInt(req.query.page) || 1,
         totalProducts: totalProducts,
         timestamp: Date.now(),
       };
@@ -114,7 +114,7 @@ export const getExploreProducts = async (req, res) => {
     const totalProducts = parseInt(response.headers['x-wp-total'], 10);
     const responseData = {
       data: response.data,
-      pageNumber: 1,
+      pageNumber: parseInt(req.query.page) || 1,
       totalProducts: totalProducts,
       timestamp: Date.now(),
     };
@@ -139,7 +139,7 @@ export const getHotDeals = async (req, res) => {
     const totalProducts = parseInt(response.headers['x-wp-total'], 10);
     const responseData = {
       data: response.data,
-      pageNumber: 1,
+      pageNumber: parseInt(req.query.page) || 1,
       totalProducts: totalProducts,
       timestamp: Date.now(),
     };
