@@ -40,12 +40,17 @@ export const getProducts = (req, res) => {
 
 
 export const getWhatsNew = async (req, res) => {
-  const cacheKey = 'whatsNew';
+  const cacheKey = 'whatsNew-' + JSON.stringify(req.query);
   if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
     return res.send(productsCache[cacheKey]);
   }
   try {
-    const response = await WooCommerce.get('products', { orderby: 'date', order: 'desc' });
+    const params = {
+      ...req.query,
+      orderby: 'date',
+      order: 'desc'
+    };
+    const response = await WooCommerce.get('products', params);
     const totalProducts = parseInt(response.headers['x-wp-total'], 10);
     const responseData = {
       data: response.data,
@@ -61,7 +66,7 @@ export const getWhatsNew = async (req, res) => {
 };
 
 export const getClearance = async (req, res) => {
-  const cacheKey = 'clearance';
+  const cacheKey = 'clearance-' + JSON.stringify(req.query);
   if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
     return res.send(productsCache[cacheKey]);
   }
@@ -69,7 +74,11 @@ export const getClearance = async (req, res) => {
     const tagsResponse = await WooCommerce.get('products/tags', { slug: 'clearance' });
     if (tagsResponse.data.length > 0) {
       const tagId = tagsResponse.data[0].id;
-      const response = await WooCommerce.get('products', { tag: tagId });
+      const params = {
+        ...req.query,
+        tag: tagId
+      };
+      const response = await WooCommerce.get('products', params);
       const totalProducts = parseInt(response.headers['x-wp-total'], 10);
       const responseData = {
         data: response.data,
@@ -117,12 +126,16 @@ export const getExploreProducts = async (req, res) => {
 };
 
 export const getHotDeals = async (req, res) => {
-  const cacheKey = 'hotDeals';
+  const cacheKey = 'hotDeals-' + JSON.stringify(req.query);
   if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
     return res.send(productsCache[cacheKey]);
   }
   try {
-    const response = await WooCommerce.get('products', { on_sale: true });
+    const params = {
+      ...req.query,
+      on_sale: true
+    };
+    const response = await WooCommerce.get('products', params);
     const totalProducts = parseInt(response.headers['x-wp-total'], 10);
     const responseData = {
       data: response.data,
