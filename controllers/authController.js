@@ -73,6 +73,30 @@ export const me = async (req, res) => {
   }
 };
 
+export const deleteAccount = async (req, res) => {
+  try {
+    // Get customer ID from user token data (added by auth middleware)
+    const customerId = req.user.id;
+    
+    if (!customerId) {
+      return res.status(400).json({ message: 'Customer ID not found' });
+    }
+
+    // Delete customer from WooCommerce
+    await WooCommerce.delete(`customers/${customerId}`, {
+      force: true // Permanently delete instead of moving to trash
+    });
+
+    res.json({ message: 'Account deleted successfully' });
+  } catch (error) {
+    console.error('Delete account error:', error);
+    res.status(500).json({
+      message: 'Failed to delete account',
+      error: error.response?.data?.message || error.message
+    });
+  }
+};
+
 export const forgotPassword = async (req, res) => {
   const { email } = req.body;
 
