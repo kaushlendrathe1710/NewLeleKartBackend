@@ -4,6 +4,8 @@ import WooCommerce from '../config/woocommerce.js';
 
 dotenv.config();
 
+const FORGOT_PASSWORD_ENDPOINT = 'https://lelekart.com/api/forgot_password.php';
+
 const WP_BASE_URL = process.env.WP_BASE_URL;
 const JWT_LOGIN_ENDPOINT = process.env.JWT_LOGIN_ENDPOINT;
 const USERS_ENDPOINT = process.env.USERS_ENDPOINT;
@@ -68,6 +70,23 @@ export const me = async (req, res) => {
   } catch (error) {
     console.error('Error fetching user data:', error);
     res.status(500).json({ message: 'Failed to fetch user data' });
+  }
+};
+
+export const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ message: 'Email is required' });
+  }
+
+  try {
+    const response = await fetch(`${FORGOT_PASSWORD_ENDPOINT}?login=${email}`);
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ message: 'Failed to process forgot password request' });
   }
 };
 
