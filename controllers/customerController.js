@@ -18,7 +18,7 @@ export const updateBillingAddress = async (req, res) => {
 export const createCustomerOrder = async (req, res) => {
   try {
     const { line_items, payment_method } = req.body;
-    const customerId = req.user.id; // Assuming user ID is available in req.user after JWT verification
+    const customerId = req.user.id;
 
     // Fetch customer data to get billing and shipping addresses
     const customer = await WooCommerce.get(`customers/${customerId}`);
@@ -34,7 +34,7 @@ export const createCustomerOrder = async (req, res) => {
     if (payment_method === 'cod') {
       orderData = { ...orderData, status: 'processing' };
     } else {
-      orderData = { ...orderData, set_paid: false, status: 'pending-payment' };
+      orderData = { ...orderData, set_paid: false };
     }
 
     const response = await WooCommerce.post('orders', orderData);
