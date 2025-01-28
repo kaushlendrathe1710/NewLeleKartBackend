@@ -14,6 +14,13 @@ export const createRefundRequest = async (req, res) => {
       return res.status(403).json({ message: 'This order does not belong to you' });
     }
 
+    // Check if order status is completed or delivered
+    if (order.status !== 'completed' && order.status !== 'delivered') {
+      return res.status(400).json({ 
+        message: 'Refund can only be initiated for completed or delivered orders' 
+      });
+    }
+
     // Create refund for full order amount
     const refundData = {
       amount: order.total,
