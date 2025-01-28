@@ -1,5 +1,45 @@
 import WooCommerce from '../config/woocommerce.js';
 
+export const createRefundRequest = async (req, res) => {
+  const { orderId } = req.params;
+  const { reason } = req.body;
+  const customerId = req.user.id;
+
+  try {
+    // First verify that the order belongs to this customer
+    const orderResponse = await WooCommerce.get(`orders/${orderId}`);
+    const order = orderResponse.data;
+
+    if (order.customer_id !== customerId) {
+      return res.status(403).json({ message: 'This order does not belong to you' });
+    }
+
+    // Create refund for full order amount
+    const refundData = {
+      amount: order.total,
+      reason: reason,
+      api_refund: false // Set to false as this is just a request
+    };
+
+    const response = await WooCommerce.post(`orders/${orderId}/refunds`, refundData);
+    
+    // Update order note to indicate this is a refund request
+    await WooCommerce.post(`orders/${orderId}/notes`, {
+      note: `Full Order Refund Request:\nReason: ${reason}\nAmount: ${order.total}\nStatus: Pending approval`,
+      customer_note: true
+    });
+
+    res.status(201).json({
+      message: 'Refund request created successfully',
+      refund: response.data
+    });
+  } catch (error) {
+    console.error('Error creating refund request:', error);
+    res.status(500).json({ message: 'Failed to create refund request' });
+  }
+};
+
+
 export const updateBillingAddress = async (req, res) => {
   const { customerId } = req.params;
   const { billing } = req.body;
