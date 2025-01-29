@@ -10,9 +10,7 @@ export const createRefundRequest = async (req, res) => {
     const orderResponse = await WooCommerce.get(`orders/${orderId}`);
     const order = orderResponse.data;
 
-    if (order.customer_id !== customerId) {
-      return res.status(403).json({ message: 'This order does not belong to you' });
-    }
+    
 
     // Check if order status is completed or delivered
     if (order.status !== 'completed' && order.status !== 'delivered') {
