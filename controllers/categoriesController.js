@@ -1,5 +1,64 @@
 import WooCommerce from '../config/woocommerce.js';
 
+export const getCategoryFilters = async (req, res) => {
+    const { id } = req.params;
+    const cacheKey = `category-filters/${id}`;
+    
+    if (categoriesCache[cacheKey] && Date.now() - categoriesCache[cacheKey].timestamp < CACHE_EXPIRATION_TIME * 1000) {
+        return res.json(categoriesCache[cacheKey].data);
+    }
+
+    try {
+        // Fetch products from the specific category
+        const response = await WooCommerce.get('products', {
+            category: id,
+            per_page: 100,
+        });
+
+        if (!response.data || !Array.isArray(response.data)) {
+            throw new Error('Invalid response from WooCommerce API');
+        }
+
+        // Extract and process attributes from all products
+        const filtersMap = new Map();
+
+        response.data.forEach(product => {
+            if (product.attributes && Array.isArray(product.attributes)) {
+                product.attributes.forEach(attr => {
+                    if (!filtersMap.has(attr.name)) {
+                        filtersMap.set(attr.name, new Set());
+                    }
+                    // Handle both single values and arrays of values
+                    if (Array.isArray(attr.options)) {
+                        attr.options.forEach(option => {
+                            filtersMap.get(attr.name).add(option);
+                        });
+                    } else if (attr.option) {
+                        filtersMap.get(attr.name).add(attr.option);
+                    }
+                });
+            }
+        });
+
+        // Convert Map to array of filter objects
+        const filters = Array.from(filtersMap.entries()).map(([name, values]) => ({
+            name,
+            values: Array.from(values)
+        }));
+
+        // Cache the results
+        categoriesCache[cacheKey] = {
+            data: filters,
+            timestamp: Date.now()
+        };
+
+        res.json(filters);
+    } catch (error) {
+        console.error(`Error fetching filters for category ID ${id}:`, error);
+        res.status(500).json({ error: 'Failed to fetch category filters' });
+    }
+};
+
 const categoriesCache = {};
 const CACHE_EXPIRATION_TIME = 300; // 300 seconds
 
