@@ -15,9 +15,9 @@ router.post("/", createRefundRequest);
 router.get("/", getAllRefundRequests);
 
 // Get a specific refund request
-router.get("/:id", getRefundRequestById);
+router.get("/:orderId", getRefundRequestById);
 
 // Update refund request status
-router.patch("/:id", updateRefundRequest);
+router.patch("/:orderId", updateRefundRequest);
 
 export default router;

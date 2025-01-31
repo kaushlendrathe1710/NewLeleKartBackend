@@ -49,9 +49,9 @@ export const getAllRefundRequests = async (req, res) => {
 // Get a single refund request by ID
 export const getRefundRequestById = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { orderId } = req.params;
     const refundRequest = await prisma.refundRequest.findUnique({
-      where: { id }
+      where: { orderId }
     });
 
     if (!refundRequest) {
@@ -67,7 +67,7 @@ export const getRefundRequestById = async (req, res) => {
 // Update refund request status
 export const updateRefundRequest = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { orderId } = req.params;
     const { status } = req.body;
 
     if (!Object.values(prisma.RefundStatus).includes(status)) {
@@ -75,8 +75,8 @@ export const updateRefundRequest = async (req, res) => {
     }
 
     const updatedRefundRequest = await prisma.refundRequest.update({
-      where: { id },
-      data: { status }
+      where: { orderId },
+      data: { status }  
     });
 
     res.json(updatedRefundRequest);
