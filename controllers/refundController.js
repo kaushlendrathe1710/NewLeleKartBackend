@@ -17,13 +17,7 @@ export const createRefundRequest = async (req, res) => {
     } catch (error) {
       return res.status(404).json({ error: "Invalid order ID - Order not found in WooCommerce" });
     }
-
-    if (existingRequest) {
-      return res.status(400).json({ 
-        error: "A refund request already exists for this order",
-        existingRequest
-      });
-    }
+    
 
     const refundRequest = await prisma.refundRequest.create({
       data: {
