@@ -11,7 +11,7 @@ function isCacheExpired(cacheEntry) {
   return (Date.now() - cacheEntry.timestamp) / 1000 > CACHE_EXPIRATION_TIME;
 }
 
-export const getProducts = (req, res) => {
+export const getProducts = async (req, res) => {
   const queryParams = req.query;
   const cacheKey = 'products-' + JSON.stringify(queryParams);
 
@@ -21,21 +21,37 @@ export const getProducts = (req, res) => {
 
   const pageNumber = parseInt(queryParams.page) || 1;
 
-  WooCommerce.get('products', queryParams)
-    .then((response) => {
-      const totalProducts = parseInt(response.headers['x-wp-total'], 10);
-      const responseData = {
-        data: response.data,
-        pageNumber: pageNumber,
-        totalProducts: totalProducts,
-        timestamp: Date.now(),
+  try {
+    // Fetch products
+    const productsResponse = await WooCommerce.get('products', queryParams);
+    
+    // Fetch all attributes with their terms
+    const attributesResponse = await WooCommerce.get('products/attributes');
+    const attributes = attributesResponse.data;
+    
+    // Fetch terms for each attribute
+    const attributesWithTerms = await Promise.all(attributes.map(async (attribute) => {
+      const termsResponse = await WooCommerce.get(`products/attributes/${attribute.id}/terms`);
+      return {
+        name: attribute.name.toLowerCase(),
+        values: termsResponse.data.map(term => term.name)
       };
-      productsCache[cacheKey] = responseData;
-      res.send(responseData);
-    })
-    .catch((error) => {
-      res.status(error.response.status).send(error.response.data);
-    });
+    }));
+
+    const totalProducts = parseInt(productsResponse.headers['x-wp-total'], 10);
+    const responseData = {
+      data: productsResponse.data,
+      pageNumber: pageNumber,
+      totalProducts: totalProducts,
+      filter: attributesWithTerms,
+      timestamp: Date.now(),
+    };
+    
+    productsCache[cacheKey] = responseData;
+    res.send(responseData);
+  } catch (error) {
+    res.status(error.response?.status || 500).send(error.response?.data || error.message);
+  }
 };
 
 
@@ -50,12 +66,28 @@ export const getWhatsNew = async (req, res) => {
       orderby: 'date',
       order: 'desc'
     };
+    // Fetch products
     const response = await WooCommerce.get('products', params);
+    
+    // Fetch all attributes with their terms
+    const attributesResponse = await WooCommerce.get('products/attributes');
+    const attributes = attributesResponse.data;
+    
+    // Fetch terms for each attribute
+    const attributesWithTerms = await Promise.all(attributes.map(async (attribute) => {
+      const termsResponse = await WooCommerce.get(`products/attributes/${attribute.id}/terms`);
+      return {
+        name: attribute.name.toLowerCase(),
+        values: termsResponse.data.map(term => term.name)
+      };
+    }));
+
     const totalProducts = parseInt(response.headers['x-wp-total'], 10);
     const responseData = {
       data: response.data,
       pageNumber: parseInt(req.query.page) || 1,
       totalProducts: totalProducts,
+      filter: attributesWithTerms,
       timestamp: Date.now(),
     };
     productsCache[cacheKey] = responseData;
@@ -78,12 +110,28 @@ export const getClearance = async (req, res) => {
         ...req.query,
         tag: tagId
       };
+      // Fetch products
       const response = await WooCommerce.get('products', params);
+      
+      // Fetch all attributes with their terms
+      const attributesResponse = await WooCommerce.get('products/attributes');
+      const attributes = attributesResponse.data;
+      
+      // Fetch terms for each attribute
+      const attributesWithTerms = await Promise.all(attributes.map(async (attribute) => {
+        const termsResponse = await WooCommerce.get(`products/attributes/${attribute.id}/terms`);
+        return {
+          name: attribute.name.toLowerCase(),
+          values: termsResponse.data.map(term => term.name)
+        };
+      }));
+
       const totalProducts = parseInt(response.headers['x-wp-total'], 10);
       const responseData = {
         data: response.data,
         pageNumber: parseInt(req.query.page) || 1,
         totalProducts: totalProducts,
+        filter: attributesWithTerms,
         timestamp: Date.now(),
       };
       productsCache[cacheKey] = responseData;
@@ -102,7 +150,22 @@ export const getExploreProducts = async (req, res) => {
     return res.send(productsCache[cacheKey]);
   }
   try {
+    // Fetch products
     const response = await WooCommerce.get('products', req.query);
+    
+    // Fetch all attributes with their terms
+    const attributesResponse = await WooCommerce.get('products/attributes');
+    const attributes = attributesResponse.data;
+    
+    // Fetch terms for each attribute
+    const attributesWithTerms = await Promise.all(attributes.map(async (attribute) => {
+      const termsResponse = await WooCommerce.get(`products/attributes/${attribute.id}/terms`);
+      return {
+        name: attribute.name.toLowerCase(),
+        values: termsResponse.data.map(term => term.name)
+      };
+    }));
+
     // Function to shuffle array (Fisher-Yates shuffle)
     function shuffleArray(array) {
       for (let i = array.length - 1; i > 0; i--) {
@@ -116,6 +179,7 @@ export const getExploreProducts = async (req, res) => {
       data: response.data,
       pageNumber: parseInt(req.query.page) || 1,
       totalProducts: totalProducts,
+      filter: attributesWithTerms,
       timestamp: Date.now(),
     };
     productsCache[cacheKey] = responseData;
@@ -135,12 +199,28 @@ export const getHotDeals = async (req, res) => {
       ...req.query,
       on_sale: true
     };
+    // Fetch products
     const response = await WooCommerce.get('products', params);
+    
+    // Fetch all attributes with their terms
+    const attributesResponse = await WooCommerce.get('products/attributes');
+    const attributes = attributesResponse.data;
+    
+    // Fetch terms for each attribute
+    const attributesWithTerms = await Promise.all(attributes.map(async (attribute) => {
+      const termsResponse = await WooCommerce.get(`products/attributes/${attribute.id}/terms`);
+      return {
+        name: attribute.name.toLowerCase(),
+        values: termsResponse.data.map(term => term.name)
+      };
+    }));
+
     const totalProducts = parseInt(response.headers['x-wp-total'], 10);
     const responseData = {
       data: response.data,
       pageNumber: parseInt(req.query.page) || 1,
       totalProducts: totalProducts,
+      filter: attributesWithTerms,
       timestamp: Date.now(),
     };
     productsCache[cacheKey] = responseData;
