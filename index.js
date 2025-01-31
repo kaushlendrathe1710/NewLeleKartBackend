@@ -9,6 +9,7 @@ import customerRoutes from './routes/customerRoutes.js';
 import clearCacheRoutes from './routes/clearCacheRoutes.js';
 import bannerRoutes from './routes/bannerRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
+import refundRoutes from './routes/refundRoutes.js';
 
 const app = express();
 const PORT = 3000;
@@ -28,6 +29,7 @@ app.use('/customers', customerRoutes);
 app.use('/payment', paymentRoutes);
 app.use('/cache', clearCacheRoutes);
 app.use('/banners', bannerRoutes);
+app.use('/refunds', refundRoutes);
 
 // Start the server
 app.listen(PORT, () => {
