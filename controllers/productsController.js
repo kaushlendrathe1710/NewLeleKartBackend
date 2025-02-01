@@ -11,24 +11,55 @@ function isCacheExpired(cacheEntry) {
 }
 
 export const getProducts = async (req, res) => {
-  const queryParams = req.query;
-  const cacheKey = 'products-' + JSON.stringify(queryParams);
-
+  const { page = 1, order, attributeId, attributeTerm } = req.query;
+  const per_page = 10;
+  const currentPage = parseInt(page);
+  
+  const cacheKey = `products-${attributeId || ''}-${attributeTerm || ''}-${order || 'default'}`;
   if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
     return res.send(productsCache[cacheKey]);
   }
 
-  const pageNumber = parseInt(queryParams.page) || 1;
-
   try {
-    // Fetch products
-    const productsResponse = await WooCommerce.get('products', queryParams);
-    
-    // Fetch all attributes with their terms
+    const allProductsCache = await getAllProductsFromCache();
+    let products = allProductsCache.data;
+    const totalOriginalProducts = allProductsCache.totalProducts;
+
+    // Apply attribute filter if provided
+    if (attributeId && attributeTerm) {
+      products = products.filter(product => {
+        if (!product.attributes) return false;
+        return product.attributes.some(attr => {
+          if (parseInt(attr.id) === parseInt(attributeId)) {
+            if (Array.isArray(attr.options)) {
+              return attr.options.some(opt => opt.toLowerCase() === attributeTerm.toLowerCase());
+            }
+            if (typeof attr.options === 'string') {
+              return attr.options.toLowerCase().includes(attributeTerm.toLowerCase());
+            }
+          }
+          return false;
+        });
+      });
+    }
+
+    // Sort products by price if order parameter is provided
+    if (order) {
+      products.sort((a, b) => {
+        const priceA = parseFloat(a.sale_price) || parseFloat(a.regular_price) || parseFloat(a.price) || 0;
+        const priceB = parseFloat(b.sale_price) || parseFloat(b.regular_price) || parseFloat(b.price) || 0;
+        return order === 'asc' ? priceA - priceB : priceB - priceA;
+      });
+    }
+
+    // Paginate results
+    const startIndex = (currentPage - 1) * per_page;
+    const endIndex = startIndex + per_page;
+    const paginatedProducts = products.slice(startIndex, endIndex);
+
+    // Fetch all attributes with their terms for filter UI
     const attributesResponse = await WooCommerce.get('products/attributes');
     const attributes = attributesResponse.data;
-    
-    // Fetch terms for each attribute
     const attributesWithTerms = await Promise.all(attributes.map(async (attribute) => {
       const termsResponse = await WooCommerce.get(`products/attributes/${attribute.id}/terms`);
       return {
@@ -41,13 +72,15 @@ export const getProducts = async (req, res) => {
       };
     }));
 
-    const totalProducts = parseInt(productsResponse.headers['x-wp-total'], 10);
     const responseData = {
-      data: productsResponse.data,
-      pageNumber: pageNumber,
-      totalProducts: totalProducts,
+      data: paginatedProducts,
+      totalProducts: products.length,
+      totalOriginalProducts: totalOriginalProducts,
+      currentPage: currentPage,
+      per_page: per_page,
+      total_pages: Math.ceil(products.length / per_page),
       filter: attributesWithTerms,
-      timestamp: Date.now(),
+      timestamp: Date.now()
     };
     
     productsCache[cacheKey] = responseData;
@@ -58,24 +91,58 @@ export const getProducts = async (req, res) => {
 };
 
 export const getWhatsNew = async (req, res) => {
-  const cacheKey = 'whatsNew-' + JSON.stringify(req.query);
+  const { page = 1, order, attributeId, attributeTerm } = req.query;
+  const per_page = 10;
+  const currentPage = parseInt(page);
+  
+  const cacheKey = `whatsNew-${attributeId || ''}-${attributeTerm || ''}-${order || 'default'}`;
   if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
     return res.send(productsCache[cacheKey]);
   }
+
   try {
-    const params = {
-      ...req.query,
-      orderby: 'date',
-      order: 'desc'
-    };
-    // Fetch products
-    const response = await WooCommerce.get('products', params);
-    
-    // Fetch all attributes with their terms
+    const allProductsCache = await getAllProductsFromCache();
+    let products = allProductsCache.data;
+    const totalOriginalProducts = allProductsCache.totalProducts;
+
+    // Sort by date descending first (newest first)
+    products.sort((a, b) => new Date(b.date_created) - new Date(a.date_created));
+
+    // Apply attribute filter if provided
+    if (attributeId && attributeTerm) {
+      products = products.filter(product => {
+        if (!product.attributes) return false;
+        return product.attributes.some(attr => {
+          if (parseInt(attr.id) === parseInt(attributeId)) {
+            if (Array.isArray(attr.options)) {
+              return attr.options.some(opt => opt.toLowerCase() === attributeTerm.toLowerCase());
+            }
+            if (typeof attr.options === 'string') {
+              return attr.options.toLowerCase().includes(attributeTerm.toLowerCase());
+            }
+          }
+          return false;
+        });
+      });
+    }
+
+    // Sort products by price if order parameter is provided
+    if (order) {
+      products.sort((a, b) => {
+        const priceA = parseFloat(a.sale_price) || parseFloat(a.regular_price) || parseFloat(a.price) || 0;
+        const priceB = parseFloat(b.sale_price) || parseFloat(b.regular_price) || parseFloat(b.price) || 0;
+        return order === 'asc' ? priceA - priceB : priceB - priceA;
+      });
+    }
+
+    // Paginate results
+    const startIndex = (currentPage - 1) * per_page;
+    const endIndex = startIndex + per_page;
+    const paginatedProducts = products.slice(startIndex, endIndex);
+
+    // Fetch all attributes with their terms for filter UI
     const attributesResponse = await WooCommerce.get('products/attributes');
     const attributes = attributesResponse.data;
-    
-    // Fetch terms for each attribute
     const attributesWithTerms = await Promise.all(attributes.map(async (attribute) => {
       const termsResponse = await WooCommerce.get(`products/attributes/${attribute.id}/terms`);
       return {
@@ -88,14 +155,17 @@ export const getWhatsNew = async (req, res) => {
       };
     }));
 
-    const totalProducts = parseInt(response.headers['x-wp-total'], 10);
     const responseData = {
-      data: response.data,
-      pageNumber: parseInt(req.query.page) || 1,
-      totalProducts: totalProducts,
+      data: paginatedProducts,
+      totalProducts: products.length,
+      totalOriginalProducts: totalOriginalProducts,
+      currentPage: currentPage,
+      per_page: per_page,
+      total_pages: Math.ceil(products.length / per_page),
       filter: attributesWithTerms,
-      timestamp: Date.now(),
+      timestamp: Date.now()
     };
+    
     productsCache[cacheKey] = responseData;
     res.send(responseData);
   } catch (error) {
@@ -104,70 +174,65 @@ export const getWhatsNew = async (req, res) => {
 };
 
 export const getClearance = async (req, res) => {
-  const cacheKey = 'clearance-' + JSON.stringify(req.query);
+  const { page = 1, order, attributeId, attributeTerm } = req.query;
+  const per_page = 10;
+  const currentPage = parseInt(page);
+  
+  const cacheKey = `clearance-${attributeId || ''}-${attributeTerm || ''}-${order || 'default'}`;
   if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
     return res.send(productsCache[cacheKey]);
   }
+
   try {
+    // First get the clearance tag ID
     const tagsResponse = await WooCommerce.get('products/tags', { slug: 'clearance' });
-    if (tagsResponse.data.length > 0) {
-      const tagId = tagsResponse.data[0].id;
-      const params = {
-        ...req.query,
-        tag: tagId
-      };
-      // Fetch products
-      const response = await WooCommerce.get('products', params);
-      
-      // Fetch all attributes with their terms
-      const attributesResponse = await WooCommerce.get('products/attributes');
-      const attributes = attributesResponse.data;
-      
-      // Fetch terms for each attribute
-      const attributesWithTerms = await Promise.all(attributes.map(async (attribute) => {
-        const termsResponse = await WooCommerce.get(`products/attributes/${attribute.id}/terms`);
-        return {
-          id: attribute.id,
-          name: attribute.name.toLowerCase(),
-          terms: termsResponse.data.map(term => ({
-            id: term.id,
-            name: term.name
-          }))
-        };
-      }));
-
-      const totalProducts = parseInt(response.headers['x-wp-total'], 10);
-      const responseData = {
-        data: response.data,
-        pageNumber: parseInt(req.query.page) || 1,
-        totalProducts: totalProducts,
-        filter: attributesWithTerms,
-        timestamp: Date.now(),
-      };
-      productsCache[cacheKey] = responseData;
-      res.send(responseData);
-    } else {
-      res.status(404).send({ message: 'Clearance tag not found' });
+    if (tagsResponse.data.length === 0) {
+      return res.status(404).send({ message: 'Clearance tag not found' });
     }
-  } catch (error) {
-    res.status(error.response?.status || 500).send(error.response?.data || error.message);
-  }
-};
+    const tagId = tagsResponse.data[0].id;
 
-export const getExploreProducts = async (req, res) => {
-  const cacheKey = 'exploreProducts-' + JSON.stringify(req.query);
-  if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
-    return res.send(productsCache[cacheKey]);
-  }
-  try {
-    // Fetch products
-    const response = await WooCommerce.get('products', req.query);
-    
-    // Fetch all attributes with their terms
+    const allProductsCache = await getAllProductsFromCache();
+    let products = allProductsCache.data;
+    const totalOriginalProducts = allProductsCache.totalProducts;
+
+    // Filter for clearance products
+    products = products.filter(product => product.tags && product.tags.some(tag => tag.id === tagId));
+
+    // Apply attribute filter if provided
+    if (attributeId && attributeTerm) {
+      products = products.filter(product => {
+        if (!product.attributes) return false;
+        return product.attributes.some(attr => {
+          if (parseInt(attr.id) === parseInt(attributeId)) {
+            if (Array.isArray(attr.options)) {
+              return attr.options.some(opt => opt.toLowerCase() === attributeTerm.toLowerCase());
+            }
+            if (typeof attr.options === 'string') {
+              return attr.options.toLowerCase().includes(attributeTerm.toLowerCase());
+            }
+          }
+          return false;
+        });
+      });
+    }
+
+    // Sort products by price if order parameter is provided
+    if (order) {
+      products.sort((a, b) => {
+        const priceA = parseFloat(a.sale_price) || parseFloat(a.regular_price) || parseFloat(a.price) || 0;
+        const priceB = parseFloat(b.sale_price) || parseFloat(b.regular_price) || parseFloat(b.price) || 0;
+        return order === 'asc' ? priceA - priceB : priceB - priceA;
+      });
+    }
+
+    // Paginate results
+    const startIndex = (currentPage - 1) * per_page;
+    const endIndex = startIndex + per_page;
+    const paginatedProducts = products.slice(startIndex, endIndex);
+
+    // Fetch all attributes with their terms for filter UI
     const attributesResponse = await WooCommerce.get('products/attributes');
     const attributes = attributesResponse.data;
-    
-    // Fetch terms for each attribute
     const attributesWithTerms = await Promise.all(attributes.map(async (attribute) => {
       const termsResponse = await WooCommerce.get(`products/attributes/${attribute.id}/terms`);
       return {
@@ -180,22 +245,103 @@ export const getExploreProducts = async (req, res) => {
       };
     }));
 
-    // Function to shuffle array (Fisher-Yates shuffle)
-    function shuffleArray(array) {
-      for (let i = array.length - 1; i > 0; i--) {
+    const responseData = {
+      data: paginatedProducts,
+      totalProducts: products.length,
+      totalOriginalProducts: totalOriginalProducts,
+      currentPage: currentPage,
+      per_page: per_page,
+      total_pages: Math.ceil(products.length / per_page),
+      filter: attributesWithTerms,
+      timestamp: Date.now()
+    };
+    
+    productsCache[cacheKey] = responseData;
+    res.send(responseData);
+  } catch (error) {
+    res.status(error.response?.status || 500).send(error.response?.data || error.message);
+  }
+};
+
+export const getExploreProducts = async (req, res) => {
+  const { page = 1, order, attributeId, attributeTerm } = req.query;
+  const per_page = 10;
+  const currentPage = parseInt(page);
+  
+  const cacheKey = `explore-${attributeId || ''}-${attributeTerm || ''}-${order || 'default'}-${page}`;
+  if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
+    return res.send(productsCache[cacheKey]);
+  }
+
+  try {
+    const allProductsCache = await getAllProductsFromCache();
+    let products = [...allProductsCache.data]; // Create a copy for shuffling
+    const totalOriginalProducts = allProductsCache.totalProducts;
+
+    // Apply attribute filter if provided
+    if (attributeId && attributeTerm) {
+      products = products.filter(product => {
+        if (!product.attributes) return false;
+        return product.attributes.some(attr => {
+          if (parseInt(attr.id) === parseInt(attributeId)) {
+            if (Array.isArray(attr.options)) {
+              return attr.options.some(opt => opt.toLowerCase() === attributeTerm.toLowerCase());
+            }
+            if (typeof attr.options === 'string') {
+              return attr.options.toLowerCase().includes(attributeTerm.toLowerCase());
+            }
+          }
+          return false;
+        });
+      });
+    }
+
+    // Sort products by price if order parameter is provided
+    if (order) {
+      products.sort((a, b) => {
+        const priceA = parseFloat(a.sale_price) || parseFloat(a.regular_price) || parseFloat(a.price) || 0;
+        const priceB = parseFloat(b.sale_price) || parseFloat(b.regular_price) || parseFloat(b.price) || 0;
+        return order === 'asc' ? priceA - priceB : priceB - priceA;
+      });
+    } else {
+      // Shuffle array (Fisher-Yates shuffle) if no order specified
+      for (let i = products.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
+        [products[i], products[j]] = [products[j], products[i]];
       }
     }
-    shuffleArray(response.data);
-    const totalProducts = parseInt(response.headers['x-wp-total'], 10);
+
+    // Paginate results
+    const startIndex = (currentPage - 1) * per_page;
+    const endIndex = startIndex + per_page;
+    const paginatedProducts = products.slice(startIndex, endIndex);
+
+    // Fetch all attributes with their terms for filter UI
+    const attributesResponse = await WooCommerce.get('products/attributes');
+    const attributes = attributesResponse.data;
+    const attributesWithTerms = await Promise.all(attributes.map(async (attribute) => {
+      const termsResponse = await WooCommerce.get(`products/attributes/${attribute.id}/terms`);
+      return {
+        id: attribute.id,
+        name: attribute.name.toLowerCase(),
+        terms: termsResponse.data.map(term => ({
+          id: term.id,
+          name: term.name
+        }))
+      };
+    }));
+
     const responseData = {
-      data: response.data,
-      pageNumber: parseInt(req.query.page) || 1,
-      totalProducts: totalProducts,
+      data: paginatedProducts,
+      totalProducts: products.length,
+      totalOriginalProducts: totalOriginalProducts,
+      currentPage: currentPage,
+      per_page: per_page,
+      total_pages: Math.ceil(products.length / per_page),
       filter: attributesWithTerms,
-      timestamp: Date.now(),
+      timestamp: Date.now()
     };
+    
     productsCache[cacheKey] = responseData;
     res.send(responseData);
   } catch (error) {
@@ -204,23 +350,62 @@ export const getExploreProducts = async (req, res) => {
 };
 
 export const getHotDeals = async (req, res) => {
-  const cacheKey = 'hotDeals-' + JSON.stringify(req.query);
+  const { page = 1, order, attributeId, attributeTerm } = req.query;
+  const per_page = 10;
+  const currentPage = parseInt(page);
+  
+  const cacheKey = `hotDeals-${attributeId || ''}-${attributeTerm || ''}-${order || 'default'}`;
   if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
     return res.send(productsCache[cacheKey]);
   }
+
   try {
-    const params = {
-      ...req.query,
-      on_sale: true
-    };
-    // Fetch products
-    const response = await WooCommerce.get('products', params);
-    
-    // Fetch all attributes with their terms
+    const allProductsCache = await getAllProductsFromCache();
+    let products = allProductsCache.data;
+    const totalOriginalProducts = allProductsCache.totalProducts;
+
+    // Filter for products on sale
+    products = products.filter(product => {
+      const regularPrice = parseFloat(product.regular_price) || 0;
+      const salePrice = parseFloat(product.sale_price) || 0;
+      return salePrice > 0 && salePrice < regularPrice;
+    });
+
+    // Apply attribute filter if provided
+    if (attributeId && attributeTerm) {
+      products = products.filter(product => {
+        if (!product.attributes) return false;
+        return product.attributes.some(attr => {
+          if (parseInt(attr.id) === parseInt(attributeId)) {
+            if (Array.isArray(attr.options)) {
+              return attr.options.some(opt => opt.toLowerCase() === attributeTerm.toLowerCase());
+            }
+            if (typeof attr.options === 'string') {
+              return attr.options.toLowerCase().includes(attributeTerm.toLowerCase());
+            }
+          }
+          return false;
+        });
+      });
+    }
+
+    // Sort products by price if order parameter is provided
+    if (order) {
+      products.sort((a, b) => {
+        const priceA = parseFloat(a.sale_price) || parseFloat(a.regular_price) || parseFloat(a.price) || 0;
+        const priceB = parseFloat(b.sale_price) || parseFloat(b.regular_price) || parseFloat(b.price) || 0;
+        return order === 'asc' ? priceA - priceB : priceB - priceA;
+      });
+    }
+
+    // Paginate results
+    const startIndex = (currentPage - 1) * per_page;
+    const endIndex = startIndex + per_page;
+    const paginatedProducts = products.slice(startIndex, endIndex);
+
+    // Fetch all attributes with their terms for filter UI
     const attributesResponse = await WooCommerce.get('products/attributes');
     const attributes = attributesResponse.data;
-    
-    // Fetch terms for each attribute
     const attributesWithTerms = await Promise.all(attributes.map(async (attribute) => {
       const termsResponse = await WooCommerce.get(`products/attributes/${attribute.id}/terms`);
       return {
@@ -233,14 +418,17 @@ export const getHotDeals = async (req, res) => {
       };
     }));
 
-    const totalProducts = parseInt(response.headers['x-wp-total'], 10);
     const responseData = {
-      data: response.data,
-      pageNumber: parseInt(req.query.page) || 1,
-      totalProducts: totalProducts,
+      data: paginatedProducts,
+      totalProducts: products.length,
+      totalOriginalProducts: totalOriginalProducts,
+      currentPage: currentPage,
+      per_page: per_page,
+      total_pages: Math.ceil(products.length / per_page),
       filter: attributesWithTerms,
-      timestamp: Date.now(),
+      timestamp: Date.now()
     };
+    
     productsCache[cacheKey] = responseData;
     res.send(responseData);
   } catch (error) {
