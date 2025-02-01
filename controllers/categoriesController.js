@@ -25,26 +25,31 @@ export const getCategoryFilters = async (req, res) => {
         response.data.forEach(product => {
             if (product.attributes && Array.isArray(product.attributes)) {
                 product.attributes.forEach(attr => {
-                    if (!filtersMap.has(attr.name)) {
-                        filtersMap.set(attr.name, new Set());
+                    const key = `${attr.id}|${attr.name}`;
+                    if (!filtersMap.has(key)) {
+                        filtersMap.set(key, new Set());
                     }
                     // Handle both single values and arrays of values
                     if (Array.isArray(attr.options)) {
                         attr.options.forEach(option => {
-                            filtersMap.get(attr.name).add(option);
+                            filtersMap.get(key).add(option);
                         });
                     } else if (attr.option) {
-                        filtersMap.get(attr.name).add(attr.option);
+                        filtersMap.get(key).add(attr.option);
                     }
                 });
             }
         });
 
         // Convert Map to array of filter objects
-        const filters = Array.from(filtersMap.entries()).map(([name, values]) => ({
-            name,
-            values: Array.from(values)
-        }));
+        const filters = Array.from(filtersMap.entries()).map(([key, values]) => {
+            const [id, name] = key.split('|');
+            return {
+                id: parseInt(id),
+                name,
+                terms: Array.from(values)
+            };
+        });
 
         // Cache the results
         categoriesCache[cacheKey] = {

@@ -30,13 +30,17 @@ export const getProducts = async (req, res) => {
     const attributes = attributesResponse.data;
     
     // Fetch terms for each attribute
-    const attributesWithTerms = await Promise.all(attributes.map(async (attribute) => {
-      const termsResponse = await WooCommerce.get(`products/attributes/${attribute.id}/terms`);
-      return {
-        name: attribute.name.toLowerCase(),
-        values: termsResponse.data.map(term => term.name)
-      };
-    }));
+      const attributesWithTerms = await Promise.all(attributes.map(async (attribute) => {
+          const termsResponse = await WooCommerce.get(`products/attributes/${attribute.id}/terms`);
+          return {
+              id: attribute.id,
+              name: attribute.name.toLowerCase(),
+              terms: termsResponse.data.map(term => ({
+                id: term.id,
+                name: term.name
+              }))
+          };
+      }));
 
     const totalProducts = parseInt(productsResponse.headers['x-wp-total'], 10);
     const responseData = {
@@ -77,8 +81,12 @@ export const getWhatsNew = async (req, res) => {
     const attributesWithTerms = await Promise.all(attributes.map(async (attribute) => {
       const termsResponse = await WooCommerce.get(`products/attributes/${attribute.id}/terms`);
       return {
+        id: attribute.id,
         name: attribute.name.toLowerCase(),
-        values: termsResponse.data.map(term => term.name)
+              terms: termsResponse.data.map(term => ({
+                id: term.id,
+                name: term.name
+              }))
       };
     }));
 
@@ -121,8 +129,12 @@ export const getClearance = async (req, res) => {
       const attributesWithTerms = await Promise.all(attributes.map(async (attribute) => {
         const termsResponse = await WooCommerce.get(`products/attributes/${attribute.id}/terms`);
         return {
+          id: attribute.id,
           name: attribute.name.toLowerCase(),
-          values: termsResponse.data.map(term => term.name)
+              terms: termsResponse.data.map(term => ({
+                id: term.id,
+                name: term.name
+              }))
         };
       }));
 
@@ -161,8 +173,12 @@ export const getExploreProducts = async (req, res) => {
     const attributesWithTerms = await Promise.all(attributes.map(async (attribute) => {
       const termsResponse = await WooCommerce.get(`products/attributes/${attribute.id}/terms`);
       return {
+        id: attribute.id,
         name: attribute.name.toLowerCase(),
-        values: termsResponse.data.map(term => term.name)
+              terms: termsResponse.data.map(term => ({
+                id: term.id,
+                name: term.name
+              }))
       };
     }));
 
@@ -206,14 +222,18 @@ export const getHotDeals = async (req, res) => {
     const attributesResponse = await WooCommerce.get('products/attributes');
     const attributes = attributesResponse.data;
     
-    // Fetch terms for each attribute
-    const attributesWithTerms = await Promise.all(attributes.map(async (attribute) => {
-      const termsResponse = await WooCommerce.get(`products/attributes/${attribute.id}/terms`);
-      return {
-        name: attribute.name.toLowerCase(),
-        values: termsResponse.data.map(term => term.name)
-      };
-    }));
+      // Fetch terms for each attribute
+      const attributesWithTerms = await Promise.all(attributes.map(async (attribute) => {
+        const termsResponse = await WooCommerce.get(`products/attributes/${attribute.id}/terms`);
+        return {
+          id: attribute.id,
+          name: attribute.name.toLowerCase(),
+              terms: termsResponse.data.map(term => ({
+                id: term.id,
+                name: term.name
+              }))
+        };
+      }));
 
     const totalProducts = parseInt(response.headers['x-wp-total'], 10);
     const responseData = {
