@@ -11,11 +11,15 @@ function isCacheExpired(cacheEntry) {
 }
 
 export const getProducts = async (req, res) => {
-  const { page = 1, order, attributeId, attributeTerm } = req.query;
+  let { page = 1, order, attributeId, attributeTerm } = req.query;
+  
+  // Convert attributeId and attributeTerm to arrays if they exist
+  const attributeIds = attributeId ? (Array.isArray(attributeId) ? attributeId : [attributeId]) : [];
+  const attributeTerms = attributeTerm ? (Array.isArray(attributeTerm) ? attributeTerm : [attributeTerm]) : [];
   const per_page = 10;
   const currentPage = parseInt(page);
   
-  const cacheKey = `products-${attributeId || ''}-${attributeTerm || ''}-${order || 'default'}`;
+  const cacheKey = `products-${attributeIds.join(',') || ''}-${attributeTerms.join(',') || ''}-${order || 'default'}`;
   if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
     return res.send(productsCache[cacheKey]);
   }
@@ -25,22 +29,31 @@ export const getProducts = async (req, res) => {
     let products = allProductsCache.data;
     const totalOriginalProducts = allProductsCache.totalProducts;
 
-    // Apply attribute filter if provided
-    if (attributeId && attributeTerm) {
-      products = products.filter(product => {
-        if (!product.attributes) return false;
-        return product.attributes.some(attr => {
-          if (parseInt(attr.id) === parseInt(attributeId)) {
-            if (Array.isArray(attr.options)) {
-              return attr.options.some(opt => opt.toLowerCase() === attributeTerm.toLowerCase());
+    // Apply attribute filters if provided
+    if (attributeIds.length > 0 && attributeTerms.length > 0) {
+      // Create separate product arrays for each attribute filter
+      const filteredArrays = attributeIds.map((attrId, index) => {
+        const term = attributeTerms[index];
+        if (!attrId || !term) return [];
+        
+        return products.filter(product => {
+          if (!product.attributes) return false;
+          return product.attributes.some(attr => {
+            if (parseInt(attr.id) === parseInt(attrId)) {
+              if (Array.isArray(attr.options)) {
+                return attr.options.some(opt => opt.toLowerCase() === term.toLowerCase());
+              }
+              if (typeof attr.options === 'string') {
+                return attr.options.toLowerCase().includes(term.toLowerCase());
+              }
             }
-            if (typeof attr.options === 'string') {
-              return attr.options.toLowerCase().includes(attributeTerm.toLowerCase());
-            }
-          }
-          return false;
+            return false;
+          });
         });
       });
+
+      // Combine all filtered arrays
+      products = filteredArrays.flat();
     }
 
     // Sort products by price if order parameter is provided
@@ -91,11 +104,15 @@ export const getProducts = async (req, res) => {
 };
 
 export const getWhatsNew = async (req, res) => {
-  const { page = 1, order, attributeId, attributeTerm } = req.query;
+  let { page = 1, order, attributeId, attributeTerm } = req.query;
+  
+  // Convert attributeId and attributeTerm to arrays if they exist
+  const attributeIds = attributeId ? (Array.isArray(attributeId) ? attributeId : [attributeId]) : [];
+  const attributeTerms = attributeTerm ? (Array.isArray(attributeTerm) ? attributeTerm : [attributeTerm]) : [];
   const per_page = 10;
   const currentPage = parseInt(page);
   
-  const cacheKey = `whatsNew-${attributeId || ''}-${attributeTerm || ''}-${order || 'default'}`;
+  const cacheKey = `whatsNew-${attributeIds.join(',') || ''}-${attributeTerms.join(',') || ''}-${order || 'default'}`;
   if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
     return res.send(productsCache[cacheKey]);
   }
@@ -108,22 +125,31 @@ export const getWhatsNew = async (req, res) => {
     // Sort by date descending first (newest first)
     products.sort((a, b) => new Date(b.date_created) - new Date(a.date_created));
 
-    // Apply attribute filter if provided
-    if (attributeId && attributeTerm) {
-      products = products.filter(product => {
-        if (!product.attributes) return false;
-        return product.attributes.some(attr => {
-          if (parseInt(attr.id) === parseInt(attributeId)) {
-            if (Array.isArray(attr.options)) {
-              return attr.options.some(opt => opt.toLowerCase() === attributeTerm.toLowerCase());
+    // Apply attribute filters if provided
+    if (attributeIds.length > 0 && attributeTerms.length > 0) {
+      // Create separate product arrays for each attribute filter
+      const filteredArrays = attributeIds.map((attrId, index) => {
+        const term = attributeTerms[index];
+        if (!attrId || !term) return [];
+        
+        return products.filter(product => {
+          if (!product.attributes) return false;
+          return product.attributes.some(attr => {
+            if (parseInt(attr.id) === parseInt(attrId)) {
+              if (Array.isArray(attr.options)) {
+                return attr.options.some(opt => opt.toLowerCase() === term.toLowerCase());
+              }
+              if (typeof attr.options === 'string') {
+                return attr.options.toLowerCase().includes(term.toLowerCase());
+              }
             }
-            if (typeof attr.options === 'string') {
-              return attr.options.toLowerCase().includes(attributeTerm.toLowerCase());
-            }
-          }
-          return false;
+            return false;
+          });
         });
       });
+
+      // Combine all filtered arrays
+      products = filteredArrays.flat();
     }
 
     // Sort products by price if order parameter is provided
@@ -174,11 +200,15 @@ export const getWhatsNew = async (req, res) => {
 };
 
 export const getClearance = async (req, res) => {
-  const { page = 1, order, attributeId, attributeTerm } = req.query;
+  let { page = 1, order, attributeId, attributeTerm } = req.query;
+  
+  // Convert attributeId and attributeTerm to arrays if they exist
+  const attributeIds = attributeId ? (Array.isArray(attributeId) ? attributeId : [attributeId]) : [];
+  const attributeTerms = attributeTerm ? (Array.isArray(attributeTerm) ? attributeTerm : [attributeTerm]) : [];
   const per_page = 10;
   const currentPage = parseInt(page);
   
-  const cacheKey = `clearance-${attributeId || ''}-${attributeTerm || ''}-${order || 'default'}`;
+  const cacheKey = `clearance-${attributeIds.join(',') || ''}-${attributeTerms.join(',') || ''}-${order || 'default'}`;
   if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
     return res.send(productsCache[cacheKey]);
   }
@@ -198,22 +228,31 @@ export const getClearance = async (req, res) => {
     // Filter for clearance products
     products = products.filter(product => product.tags && product.tags.some(tag => tag.id === tagId));
 
-    // Apply attribute filter if provided
-    if (attributeId && attributeTerm) {
-      products = products.filter(product => {
-        if (!product.attributes) return false;
-        return product.attributes.some(attr => {
-          if (parseInt(attr.id) === parseInt(attributeId)) {
-            if (Array.isArray(attr.options)) {
-              return attr.options.some(opt => opt.toLowerCase() === attributeTerm.toLowerCase());
+    // Apply attribute filters if provided
+    if (attributeIds.length > 0 && attributeTerms.length > 0) {
+      // Create separate product arrays for each attribute filter
+      const filteredArrays = attributeIds.map((attrId, index) => {
+        const term = attributeTerms[index];
+        if (!attrId || !term) return [];
+        
+        return products.filter(product => {
+          if (!product.attributes) return false;
+          return product.attributes.some(attr => {
+            if (parseInt(attr.id) === parseInt(attrId)) {
+              if (Array.isArray(attr.options)) {
+                return attr.options.some(opt => opt.toLowerCase() === term.toLowerCase());
+              }
+              if (typeof attr.options === 'string') {
+                return attr.options.toLowerCase().includes(term.toLowerCase());
+              }
             }
-            if (typeof attr.options === 'string') {
-              return attr.options.toLowerCase().includes(attributeTerm.toLowerCase());
-            }
-          }
-          return false;
+            return false;
+          });
         });
       });
+
+      // Combine all filtered arrays
+      products = filteredArrays.flat();
     }
 
     // Sort products by price if order parameter is provided
@@ -264,11 +303,15 @@ export const getClearance = async (req, res) => {
 };
 
 export const getExploreProducts = async (req, res) => {
-  const { page = 1, order, attributeId, attributeTerm } = req.query;
+  let { page = 1, order, attributeId, attributeTerm } = req.query;
+  
+  // Convert attributeId and attributeTerm to arrays if they exist
+  const attributeIds = attributeId ? (Array.isArray(attributeId) ? attributeId : [attributeId]) : [];
+  const attributeTerms = attributeTerm ? (Array.isArray(attributeTerm) ? attributeTerm : [attributeTerm]) : [];
   const per_page = 10;
   const currentPage = parseInt(page);
   
-  const cacheKey = `explore-${attributeId || ''}-${attributeTerm || ''}-${order || 'default'}-${page}`;
+  const cacheKey = `explore-${attributeIds.join(',') || ''}-${attributeTerms.join(',') || ''}-${order || 'default'}-${page}`;
   if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
     return res.send(productsCache[cacheKey]);
   }
@@ -278,22 +321,31 @@ export const getExploreProducts = async (req, res) => {
     let products = [...allProductsCache.data]; // Create a copy for shuffling
     const totalOriginalProducts = allProductsCache.totalProducts;
 
-    // Apply attribute filter if provided
-    if (attributeId && attributeTerm) {
-      products = products.filter(product => {
-        if (!product.attributes) return false;
-        return product.attributes.some(attr => {
-          if (parseInt(attr.id) === parseInt(attributeId)) {
-            if (Array.isArray(attr.options)) {
-              return attr.options.some(opt => opt.toLowerCase() === attributeTerm.toLowerCase());
+    // Apply attribute filters if provided
+    if (attributeIds.length > 0 && attributeTerms.length > 0) {
+      // Create separate product arrays for each attribute filter
+      const filteredArrays = attributeIds.map((attrId, index) => {
+        const term = attributeTerms[index];
+        if (!attrId || !term) return [];
+        
+        return products.filter(product => {
+          if (!product.attributes) return false;
+          return product.attributes.some(attr => {
+            if (parseInt(attr.id) === parseInt(attrId)) {
+              if (Array.isArray(attr.options)) {
+                return attr.options.some(opt => opt.toLowerCase() === term.toLowerCase());
+              }
+              if (typeof attr.options === 'string') {
+                return attr.options.toLowerCase().includes(term.toLowerCase());
+              }
             }
-            if (typeof attr.options === 'string') {
-              return attr.options.toLowerCase().includes(attributeTerm.toLowerCase());
-            }
-          }
-          return false;
+            return false;
+          });
         });
       });
+
+      // Combine all filtered arrays
+      products = filteredArrays.flat();
     }
 
     // Sort products by price if order parameter is provided
@@ -350,11 +402,15 @@ export const getExploreProducts = async (req, res) => {
 };
 
 export const getHotDeals = async (req, res) => {
-  const { page = 1, order, attributeId, attributeTerm } = req.query;
+  let { page = 1, order, attributeId, attributeTerm } = req.query;
+  
+  // Convert attributeId and attributeTerm to arrays if they exist
+  const attributeIds = attributeId ? (Array.isArray(attributeId) ? attributeId : [attributeId]) : [];
+  const attributeTerms = attributeTerm ? (Array.isArray(attributeTerm) ? attributeTerm : [attributeTerm]) : [];
   const per_page = 10;
   const currentPage = parseInt(page);
   
-  const cacheKey = `hotDeals-${attributeId || ''}-${attributeTerm || ''}-${order || 'default'}`;
+  const cacheKey = `hotDeals-${attributeIds.join(',') || ''}-${attributeTerms.join(',') || ''}-${order || 'default'}`;
   if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
     return res.send(productsCache[cacheKey]);
   }
@@ -371,22 +427,31 @@ export const getHotDeals = async (req, res) => {
       return salePrice > 0 && salePrice < regularPrice;
     });
 
-    // Apply attribute filter if provided
-    if (attributeId && attributeTerm) {
-      products = products.filter(product => {
-        if (!product.attributes) return false;
-        return product.attributes.some(attr => {
-          if (parseInt(attr.id) === parseInt(attributeId)) {
-            if (Array.isArray(attr.options)) {
-              return attr.options.some(opt => opt.toLowerCase() === attributeTerm.toLowerCase());
+    // Apply attribute filters if provided
+    if (attributeIds.length > 0 && attributeTerms.length > 0) {
+      // Create separate product arrays for each attribute filter
+      const filteredArrays = attributeIds.map((attrId, index) => {
+        const term = attributeTerms[index];
+        if (!attrId || !term) return [];
+        
+        return products.filter(product => {
+          if (!product.attributes) return false;
+          return product.attributes.some(attr => {
+            if (parseInt(attr.id) === parseInt(attrId)) {
+              if (Array.isArray(attr.options)) {
+                return attr.options.some(opt => opt.toLowerCase() === term.toLowerCase());
+              }
+              if (typeof attr.options === 'string') {
+                return attr.options.toLowerCase().includes(term.toLowerCase());
+              }
             }
-            if (typeof attr.options === 'string') {
-              return attr.options.toLowerCase().includes(attributeTerm.toLowerCase());
-            }
-          }
-          return false;
+            return false;
+          });
         });
       });
+
+      // Combine all filtered arrays
+      products = filteredArrays.flat();
     }
 
     // Sort products by price if order parameter is provided
@@ -517,15 +582,19 @@ export async function getAllProductsFromCache(forceRefresh = false) {
 }
 
 export const filterProductsByAttribute = async (req, res) => {
-  const { attributeId, attributeTerm, page = 1, order } = req.query;
+  let { page = 1, order, attributeId, attributeTerm } = req.query;
   const per_page = 10;
   const currentPage = parseInt(page);
+  
+  // Convert attributeId and attributeTerm to arrays if they exist
+  const attributeIds = attributeId ? (Array.isArray(attributeId) ? attributeId : [attributeId]) : [];
+  const attributeTerms = attributeTerm ? (Array.isArray(attributeTerm) ? attributeTerm : [attributeTerm]) : [];
 
-  if (!attributeId || !attributeTerm) {
+  if (!attributeIds.length || !attributeTerms.length) {
     return res.status(400).send('Missing attributeId or attributeTerm');
   }
 
-  const cacheKey = `filter-${attributeId}-${attributeTerm}-${order || 'default'}`;
+  const cacheKey = `filter-${attributeIds.join(',') || ''}-${attributeTerms.join(',') || ''}-${order || 'default'}`;
   if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
     return res.send(productsCache[cacheKey]);
   }
@@ -535,20 +604,29 @@ export const filterProductsByAttribute = async (req, res) => {
     const allProducts = allProductsCache.data;
     const totalOriginalProducts = allProductsCache.totalProducts;
 
-    const filteredProducts = allProducts.filter(product => {
-      if (!product.attributes) return false;
-      return product.attributes.some(attr => {
-        if (parseInt(attr.id) === parseInt(attributeId)) {
-          if (Array.isArray(attr.options)) {
-            return attr.options.some(opt => opt.toLowerCase() === attributeTerm.toLowerCase());
+    // Create separate product arrays for each attribute filter
+    const filteredArrays = attributeIds.map((attrId, index) => {
+      const term = attributeTerms[index];
+      if (!attrId || !term) return [];
+      
+      return allProducts.filter(product => {
+        if (!product.attributes) return false;
+        return product.attributes.some(attr => {
+          if (parseInt(attr.id) === parseInt(attrId)) {
+            if (Array.isArray(attr.options)) {
+              return attr.options.some(opt => opt.toLowerCase() === term.toLowerCase());
+            }
+            if (typeof attr.options === 'string') {
+              return attr.options.toLowerCase().includes(term.toLowerCase());
+            }
           }
-          if (typeof attr.options === 'string') {
-            return attr.options.toLowerCase().includes(attributeTerm.toLowerCase());
-          }
-        }
-        return false;
+          return false;
+        });
       });
     });
+
+    // Combine all filtered arrays
+    const filteredProducts = filteredArrays.flat();
 
     // Paginate the filtered results
     const startIndex = (currentPage - 1) * per_page;
