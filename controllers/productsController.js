@@ -11,7 +11,7 @@ function isCacheExpired(cacheEntry) {
 }
 
 export const getProducts = async (req, res) => {
-  let { page = 1, order, attributeId, attributeTerm } = req.query;
+  let { page = 1, order, attributeId, attributeTerm, category, search } = req.query;
   
   // Convert attributeId and attributeTerm to arrays if they exist
   const attributeIds = attributeId ? (Array.isArray(attributeId) ? attributeId : [attributeId]) : [];
@@ -19,7 +19,7 @@ export const getProducts = async (req, res) => {
   const per_page = 10;
   const currentPage = parseInt(page);
   
-  const cacheKey = `products-${attributeIds.join(',') || ''}-${attributeTerms.join(',') || ''}-${order || 'default'}`;
+  const cacheKey = `products-${attributeIds.join(',') || ''}-${attributeTerms.join(',') || ''}-${category || ''}-${search || ''}-${order || 'default'}-${page}`;
   if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
     return res.send(productsCache[cacheKey]);
   }
@@ -28,6 +28,23 @@ export const getProducts = async (req, res) => {
     const allProductsCache = await getAllProductsFromCache();
     let products = allProductsCache.data;
     const totalOriginalProducts = allProductsCache.totalProducts;
+
+    // Search filter if provided
+    if (search) {
+      const searchTerm = search.toLowerCase();
+      products = products.filter(product => 
+        product.name.toLowerCase().includes(searchTerm) || 
+        (product.description && product.description.toLowerCase().includes(searchTerm))
+      );
+    }
+
+    // Filter by category if provided
+    if (category) {
+      products = products.filter(product => 
+        product.categories && 
+        product.categories.some(cat => cat.id === parseInt(category))
+      );
+    }
 
     // Apply attribute filters if provided
     if (attributeIds.length > 0 && attributeTerms.length > 0) {
@@ -104,7 +121,7 @@ export const getProducts = async (req, res) => {
 };
 
 export const getWhatsNew = async (req, res) => {
-  let { page = 1, order, attributeId, attributeTerm } = req.query;
+  let { page = 1, order, attributeId, attributeTerm, category, search } = req.query;
   
   // Convert attributeId and attributeTerm to arrays if they exist
   const attributeIds = attributeId ? (Array.isArray(attributeId) ? attributeId : [attributeId]) : [];
@@ -112,7 +129,7 @@ export const getWhatsNew = async (req, res) => {
   const per_page = 10;
   const currentPage = parseInt(page);
   
-  const cacheKey = `whatsNew-${attributeIds.join(',') || ''}-${attributeTerms.join(',') || ''}-${order || 'default'}`;
+  const cacheKey = `whatsNew-${attributeIds.join(',') || ''}-${attributeTerms.join(',') || ''}-${category || ''}-${search || ''}-${order || 'default'}-${page}`;
   if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
     return res.send(productsCache[cacheKey]);
   }
@@ -124,6 +141,23 @@ export const getWhatsNew = async (req, res) => {
 
     // Sort by date descending first (newest first)
     products.sort((a, b) => new Date(b.date_created) - new Date(a.date_created));
+
+    // Search filter if provided
+    if (search) {
+      const searchTerm = search.toLowerCase();
+      products = products.filter(product => 
+        product.name.toLowerCase().includes(searchTerm) || 
+        (product.description && product.description.toLowerCase().includes(searchTerm))
+      );
+    }
+
+    // Filter by category if provided
+    if (category) {
+      products = products.filter(product => 
+        product.categories && 
+        product.categories.some(cat => cat.id === parseInt(category))
+      );
+    }
 
     // Apply attribute filters if provided
     if (attributeIds.length > 0 && attributeTerms.length > 0) {
@@ -200,7 +234,7 @@ export const getWhatsNew = async (req, res) => {
 };
 
 export const getClearance = async (req, res) => {
-  let { page = 1, order, attributeId, attributeTerm } = req.query;
+  let { page = 1, order, attributeId, attributeTerm, category, search } = req.query;
   
   // Convert attributeId and attributeTerm to arrays if they exist
   const attributeIds = attributeId ? (Array.isArray(attributeId) ? attributeId : [attributeId]) : [];
@@ -208,7 +242,7 @@ export const getClearance = async (req, res) => {
   const per_page = 10;
   const currentPage = parseInt(page);
   
-  const cacheKey = `clearance-${attributeIds.join(',') || ''}-${attributeTerms.join(',') || ''}-${order || 'default'}`;
+  const cacheKey = `clearance-${attributeIds.join(',') || ''}-${attributeTerms.join(',') || ''}-${category || ''}-${search || ''}-${order || 'default'}-${page}`;
   if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
     return res.send(productsCache[cacheKey]);
   }
@@ -227,6 +261,23 @@ export const getClearance = async (req, res) => {
 
     // Filter for clearance products
     products = products.filter(product => product.tags && product.tags.some(tag => tag.id === tagId));
+
+    // Search filter if provided
+    if (search) {
+      const searchTerm = search.toLowerCase();
+      products = products.filter(product => 
+        product.name.toLowerCase().includes(searchTerm) || 
+        (product.description && product.description.toLowerCase().includes(searchTerm))
+      );
+    }
+
+    // Filter by category if provided
+    if (category) {
+      products = products.filter(product => 
+        product.categories && 
+        product.categories.some(cat => cat.id === parseInt(category))
+      );
+    }
 
     // Apply attribute filters if provided
     if (attributeIds.length > 0 && attributeTerms.length > 0) {
@@ -303,7 +354,7 @@ export const getClearance = async (req, res) => {
 };
 
 export const getExploreProducts = async (req, res) => {
-  let { page = 1, order, attributeId, attributeTerm } = req.query;
+  let { page = 1, order, attributeId, attributeTerm, category, search } = req.query;
   
   // Convert attributeId and attributeTerm to arrays if they exist
   const attributeIds = attributeId ? (Array.isArray(attributeId) ? attributeId : [attributeId]) : [];
@@ -311,7 +362,7 @@ export const getExploreProducts = async (req, res) => {
   const per_page = 10;
   const currentPage = parseInt(page);
   
-  const cacheKey = `explore-${attributeIds.join(',') || ''}-${attributeTerms.join(',') || ''}-${order || 'default'}-${page}`;
+  const cacheKey = `explore-${attributeIds.join(',') || ''}-${attributeTerms.join(',') || ''}-${category || ''}-${search || ''}-${order || 'default'}-${page}`;
   if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
     return res.send(productsCache[cacheKey]);
   }
@@ -320,6 +371,23 @@ export const getExploreProducts = async (req, res) => {
     const allProductsCache = await getAllProductsFromCache();
     let products = [...allProductsCache.data]; // Create a copy for shuffling
     const totalOriginalProducts = allProductsCache.totalProducts;
+
+    // Search filter if provided
+    if (search) {
+      const searchTerm = search.toLowerCase();
+      products = products.filter(product => 
+        product.name.toLowerCase().includes(searchTerm) || 
+        (product.description && product.description.toLowerCase().includes(searchTerm))
+      );
+    }
+
+    // Filter by category if provided
+    if (category) {
+      products = products.filter(product => 
+        product.categories && 
+        product.categories.some(cat => cat.id === parseInt(category))
+      );
+    }
 
     // Apply attribute filters if provided
     if (attributeIds.length > 0 && attributeTerms.length > 0) {
@@ -402,7 +470,7 @@ export const getExploreProducts = async (req, res) => {
 };
 
 export const getHotDeals = async (req, res) => {
-  let { page = 1, order, attributeId, attributeTerm } = req.query;
+  let { page = 1, order, attributeId, attributeTerm, category, search } = req.query;
   
   // Convert attributeId and attributeTerm to arrays if they exist
   const attributeIds = attributeId ? (Array.isArray(attributeId) ? attributeId : [attributeId]) : [];
@@ -410,7 +478,7 @@ export const getHotDeals = async (req, res) => {
   const per_page = 10;
   const currentPage = parseInt(page);
   
-  const cacheKey = `hotDeals-${attributeIds.join(',') || ''}-${attributeTerms.join(',') || ''}-${order || 'default'}`;
+  const cacheKey = `hotDeals-${attributeIds.join(',') || ''}-${attributeTerms.join(',') || ''}-${category || ''}-${search || ''}-${order || 'default'}-${page}`;
   if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
     return res.send(productsCache[cacheKey]);
   }
@@ -426,6 +494,23 @@ export const getHotDeals = async (req, res) => {
       const salePrice = parseFloat(product.sale_price) || 0;
       return salePrice > 0 && salePrice < regularPrice;
     });
+
+    // Search filter if provided
+    if (search) {
+      const searchTerm = search.toLowerCase();
+      products = products.filter(product => 
+        product.name.toLowerCase().includes(searchTerm) || 
+        (product.description && product.description.toLowerCase().includes(searchTerm))
+      );
+    }
+
+    // Filter by category if provided
+    if (category) {
+      products = products.filter(product => 
+        product.categories && 
+        product.categories.some(cat => cat.id === parseInt(category))
+      );
+    }
 
     // Apply attribute filters if provided
     if (attributeIds.length > 0 && attributeTerms.length > 0) {
@@ -594,7 +679,7 @@ export const filterProductsByAttribute = async (req, res) => {
     return res.status(400).send('Missing attributeId or attributeTerm');
   }
 
-  const cacheKey = `filter-${attributeIds.join(',') || ''}-${attributeTerms.join(',') || ''}-${order || 'default'}`;
+  const cacheKey = `filter-${attributeIds.join(',') || ''}-${attributeTerms.join(',') || ''}-${order || 'default'}-${page}`;
   if (productsCache[cacheKey] && !isCacheExpired(productsCache[cacheKey])) {
     return res.send(productsCache[cacheKey]);
   }
