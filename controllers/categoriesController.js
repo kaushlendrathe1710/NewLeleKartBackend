@@ -21,43 +21,49 @@ export const getCategoryFilters = async (req, res) => {
 
         // Extract and process attributes from all products
         const filtersMap = new Map();
+        let filterIdCounter = 1;
 
         response.data.forEach(product => {
             if (product.attributes && Array.isArray(product.attributes)) {
                 product.attributes.forEach(attr => {
-                    const key = `${attr.id}|${attr.name}`;
-                    if (!filtersMap.has(key)) {
-                        filtersMap.set(key, new Set());
-                    }
-                    // Handle both single values and arrays of values
-                    if (Array.isArray(attr.options)) {
-                        attr.options.forEach(option => {
-                            filtersMap.get(key).add(option);
+                    if (!filtersMap.has(attr.name.toLowerCase())) {
+                        filtersMap.set(attr.name.toLowerCase(), {
+                            id: filterIdCounter++,
+                            name: attr.name.toLowerCase(),
+                            terms: new Map()
                         });
-                    } else if (attr.option) {
-                        filtersMap.get(key).add(attr.option);
                     }
+                    
+                    const filter = filtersMap.get(attr.name.toLowerCase());
+                    
+                    // Handle both single values and arrays of values
+                    const options = Array.isArray(attr.options) ? attr.options : [attr.option];
+                    options.forEach(option => {
+                        if (option && !filter.terms.has(option)) {
+                            filter.terms.set(option, {
+                                id: filter.terms.size + 1,
+                                name: option
+                            });
+                        }
+                    });
                 });
             }
         });
 
-        // Convert Map to array of filter objects
-        const filters = Array.from(filtersMap.entries()).map(([key, values]) => {
-            const [id, name] = key.split('|');
-            return {
-                id: parseInt(id),
-                name,
-                terms: Array.from(values)
-            };
-        });
+        // Convert Map to array format
+        const filters = Array.from(filtersMap.values()).map(filter => ({
+            id: filter.id,
+            name: filter.name,
+            terms: Array.from(filter.terms.values())
+        }));
 
         // Cache the results
         categoriesCache[cacheKey] = {
-            data: filters,
+            data: { filter: filters },
             timestamp: Date.now()
         };
 
-        res.json(filters);
+        res.json({ filter: filters });
     } catch (error) {
         console.error(`Error fetching filters for category ID ${id}:`, error);
         res.status(500).json({ error: 'Failed to fetch category filters' });
