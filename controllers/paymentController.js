@@ -33,7 +33,7 @@ async function updateWooCommerceOrder(orderId, status) {
 
 export const createOrder = async (req, res) => {
   try {
-    const { line_items, currency = 'INR', payment_method } = req.body;
+    const { line_items, currency = 'INR', payment_method, coupon_lines } = req.body;
     const customerId = req.user.id;
 
     if (!line_items || !Array.isArray(line_items) || line_items.length === 0) {
@@ -60,6 +60,11 @@ export const createOrder = async (req, res) => {
       line_items: line_items,
       status: payment_method === 'cod' ? 'processing' : 'pending'
     };
+
+    // Add coupon lines if provided
+    if (coupon_lines && Array.isArray(coupon_lines) && coupon_lines.length > 0) {
+      orderData.coupon_lines = coupon_lines.map(code => ({ code }));
+    }
 
     const wooOrder = await WooCommerce.post('orders', orderData);
 

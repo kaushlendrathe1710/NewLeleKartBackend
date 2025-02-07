@@ -9,6 +9,7 @@ import clearCacheRoutes from './routes/clearCacheRoutes.js';
 import bannerRoutes from './routes/bannerRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import refundRoutes from './routes/refundRoutes.js';
+import couponRoutes from './routes/couponRoutes.js';
 import { getAllProductsFromCache } from './controllers/productsController.js';
 import WooCommerce from './config/woocommerce.js';
 
@@ -44,6 +45,7 @@ app.use('/payment', paymentRoutes);
 app.use('/cache', clearCacheRoutes);
 app.use('/banners', bannerRoutes);
 app.use('/refunds', refundRoutes);
+app.use('/coupons', couponRoutes);
 
 // Initialize server with cache
 app.listen(PORT, async () => {
